@@ -465,4 +465,43 @@ final class AsyncTest: XCTestCase {
         XCTAssertEqual(sum, 100)
     }
     
+    func testDrain() async {
+        let c = Channel<String>(capacity: 100)
+        await c <- "a"
+        await c <- "b"
+        await c <- "c"
+        
+        await c.drain()
+        
+        await select {
+            rx(c) {
+                XCTFail()
+            }
+            none { }
+        }
+    }
+    
+    func testInto() async {
+        let c = Channel<Int>()
+        let b = Channel<String>()
+        Task {
+            await c <- 1
+            await c <- 2
+            await c <- 3
+            await c.close()
+        }
+        
+        Task {
+            for await v in b {
+                print(v.self)
+            }
+        }
+        
+        await c.map { "str: \($0)" }.into(b)
+        
+        print("Done")
+        
+    }
+    
 }
+

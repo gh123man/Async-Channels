@@ -1,10 +1,14 @@
 import Foundation
 
-public protocol SelectHandler {
+public struct SelectHandler {
+    internal let inner: SelectProtocol
+}
+
+protocol SelectProtocol {
     func handle(_ sm: AsyncSemaphore) async -> Bool
 }
 
-struct RxHandler<T>: SelectHandler {
+struct RxHandler<T>: SelectProtocol {
     private var chan: Channel<T>
     private let outFunc: (T?) async -> ()
     
@@ -26,7 +30,7 @@ struct RxHandler<T>: SelectHandler {
     }
 }
 
-struct NoneHandler: SelectHandler {
+struct NoneHandler: SelectProtocol {
     private let handler: () async -> ()
     
     init(handler: @escaping () async -> ()) {
@@ -39,7 +43,7 @@ struct NoneHandler: SelectHandler {
     }
 }
 
-struct TxHandler<T>: SelectHandler {
+struct TxHandler<T>: SelectProtocol {
     private var chan: Channel<T>
     private let val: T
     
@@ -64,9 +68,9 @@ func handle(_ sm: AsyncSemaphore, handlers: [SelectHandler]) async -> Bool {
     var defaultCase: NoneHandler?
     
     for handler in handlers.shuffled() {
-        if let noneHnadler = handler as? NoneHandler {
+        if let noneHnadler = handler.inner as? NoneHandler {
             defaultCase = noneHnadler
-        } else if await handler.handle(sm) {
+        } else if await handler.inner.handle(sm) {
             return true
         }
     }
@@ -85,22 +89,22 @@ public func select(@SelectCollector cases: () -> ([SelectHandler])) async {
 }
 
 public func rx<T>(_ chan: Channel<T>, _ outFunc: @escaping (T?) async -> ()) -> SelectHandler {
-    return RxHandler(chan: chan, outFunc: outFunc)
+    return SelectHandler(inner: RxHandler(chan: chan, outFunc: outFunc))
 }
 
 public func rx<T>(_ chan: Channel<T>, _ outFunc: @escaping () async -> ()) -> SelectHandler {
-    return RxHandler(chan: chan, outFunc: { _ in await outFunc() })
+    return SelectHandler(inner: RxHandler(chan: chan, outFunc: { _ in await outFunc() }))
 }
 
 public func rx<T>(_ chan: Channel<T>) -> SelectHandler {
-    return RxHandler(chan: chan, outFunc: { _ in })
+    return SelectHandler(inner: RxHandler(chan: chan, outFunc: { _ in }))
 }
 
 public func tx<T>(_ chan: Channel<T>, _ val: T) -> SelectHandler {
-    return TxHandler(chan: chan, val: val)
+    return SelectHandler(inner: TxHandler(chan: chan, val: val))
 }
 
 public func none(handler: @escaping () async -> ()) -> SelectHandler {
-    return NoneHandler(handler: handler)
+    return SelectHandler(inner: NoneHandler(handler: handler))
 }
 

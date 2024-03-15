@@ -1,6 +1,6 @@
 import Foundation
 
-public actor AsyncMutex {
+actor AsyncMutex {
     private var isLocked: Bool = false
     private var continuationQueue: [CheckedContinuation<Void, Never>] = []
 
@@ -25,7 +25,7 @@ public actor AsyncMutex {
     }
 }
 
-public actor AsyncSemaphore {
+actor AsyncSemaphore {
     private var permits: Int
     private var continuationQueue: [CheckedContinuation<Void, Never>] = []
 

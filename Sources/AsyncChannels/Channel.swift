@@ -54,7 +54,7 @@ public class Channel<T> {
     private var sendQueue = [Sender<T>]()
     private var recvQueue = [Receiver<T>]()
 
-    init (capacity: Int = 0) {
+    public init(capacity: Int = 0) {
         self.capacity = capacity
     }
 

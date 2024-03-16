@@ -21,6 +21,7 @@ await msg <- "Go"
 await msg.close()
 
 Task {
+    // Channel is also an `AsyncSequence`
     for await message in msg {
         print(message)
     }
@@ -140,3 +141,7 @@ for _ in (0..<20) {
     }
 }
 ```
+
+## Notes
+
+If you are looking for a blocking variant of this library for traditional swift concurrency, check out my previous project [Swigo](https://github.com/gh123man/Swigo) which this library is based off of. 

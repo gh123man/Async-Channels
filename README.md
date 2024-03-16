@@ -30,6 +30,11 @@ Task {
 await <-done
 ```
 
+## Usage
+
+1. Add `https://github.com/gh123man/Async-Channels` as a Swift package dependency to your project. 
+2. `import AsyncChannels` and go!
+
 ## Channel Operations
 
 

@@ -13,7 +13,7 @@ prefix operator <-
     return await chan.receive()
 }
 
-public class Channel<T: Sendable> {
+public final class Channel<T: Sendable>: @unchecked Sendable {
     class Sender<U> {
         private var value: U
         private var sema = AsyncSemaphore(value: 0)
@@ -47,7 +47,7 @@ public class Channel<T: Sendable> {
         }
     }
     
-    private var mutex = AsyncMutex()
+    private let mutex = AsyncMutex()
     private let capacity: Int
     private var closed = false
     private var buffer = [T]()

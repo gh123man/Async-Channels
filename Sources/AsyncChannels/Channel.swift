@@ -13,7 +13,7 @@ prefix operator <-
     return await chan.receive()
 }
 
-public class Channel<T> {
+public class Channel<T: Sendable> {
     class Sender<U> {
         private var value: U
         private var sema = AsyncSemaphore(value: 0)

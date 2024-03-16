@@ -21,7 +21,6 @@ await msg <- "Go"
 await msg.close()
 
 Task {
-    // Channel is also an `AsyncSequence`
     for await message in msg {
         print(message)
     }
@@ -90,6 +89,20 @@ await a.close()
 // done is signaled 
 await <-done
 ```
+
+`Channel` also implements `AsyncSequence` so you may write:
+```swift
+
+let a = Channel<String>() 
+
+...
+
+for await message in a {
+    print(message)
+}
+```
+
+The loop will break when the channel is closed. 
 
 ## Select
 

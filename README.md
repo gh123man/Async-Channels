@@ -44,12 +44,12 @@ Un-Buffered Channels
 let msg = Channel<String>()
 
 Task {
-    // Send a value. Send will yield until the channel is read. 
+    // Send a value. Send will suspend until the channel is read. 
     await msg <- "foo" 
 }
 
 Task {
-    // Receive a value. Receive will yield until a value is ready
+    // Receive a value. Receive will suspend until a value is ready
     let foo = await <-msg
 }
 ```
@@ -59,7 +59,7 @@ Buffered Channels
 // Create a buffered channel that can hold 2 items
 let msg = Channel<String>(capacity: 2)
 
-// Writing to a buffered channel will not yield until the channel is full
+// Writing to a buffered channel will not suspend until the channel is full
 await msg <- "foo" 
 await msg <- "bar" 
 
@@ -79,7 +79,7 @@ let a = Channel<String>()
 let done = Channel<Bool>()
 
 Task {
-    // a will yield because there is nothing to receive
+    // a will suspend because there is nothing to receive
     await <-a 
     await done <- true
 }
@@ -105,7 +105,7 @@ The loop will break when the channel is closed.
 
 ## Select
 
-`select` lets a single task wait on multiple channel operations. `select` will yield until at least one of the cases is ready. If multiple cases are ready it will choose one randomly. 
+`select` lets a single task wait on multiple channel operations. `select` will suspend until at least one of the cases is ready. If multiple cases are ready it will choose one randomly. 
 
 ### Operations
 
@@ -151,7 +151,7 @@ for _ in (0..<20) {
         rx(a) { print($0!) }
         // send "b" to b
         tx(b, "b")
-        // if both a and b yield, print "NONE"
+        // if both a and b suspend, print "NONE"
         none {
             print("NONE")
         }

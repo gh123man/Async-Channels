@@ -3,11 +3,12 @@
 Channels for Swift concurrency.
 
 > Don't communicate by sharing memory; share memory by communicating
->- Rob Pike
+> 
+> \- Rob Pike
 
 If you are familiar with golang and the go ecosystem, you can skip to the [go comparisons section.](/GolangVsSwift.md)
 
-Channels are a typed conduit through which you can send and receive values - usually across threads or in this case, Swift Async Tasks. This library is modeled off of how go implements channels and channel operations. 
+Channels are a typed conduit through which you can send and receive values - usually across threads or in this case, Swift async tasks. This library is modeled after go's channel behaviors. 
 
 ## Example
 
@@ -17,7 +18,7 @@ let done = Channel<Bool>()
 
 await msg <- "Swift"
 await msg <- "❤️"
-await msg <- "Go"
+await msg <- "Channels"
 await msg.close()
 
 Task {
@@ -39,7 +40,6 @@ await <-done
 
 Un-Buffered Channels
 ```swift
-
 // Create an un-buffered channel
 let msg = Channel<String>()
 
@@ -90,12 +90,11 @@ await a.close()
 await <-done
 ```
 
-`Channel` also implements `AsyncSequence` so you may write:
+### Sequence operations 
+
+`Channel` implements `AsyncSequence` so you may write:
 ```swift
-
 let a = Channel<String>() 
-
-...
 
 for await message in a {
     print(message)
@@ -105,6 +104,8 @@ for await message in a {
 The loop will break when the channel is closed. 
 
 ## Select
+
+`select` lets a single task wait on multiple channel operations. `select` will yield until at least one of the cases is ready. If multiple cases are ready it will choose one randomly. 
 
 ### Operations
 
@@ -117,8 +118,6 @@ The loop will break when the channel is closed.
 `none { ... }` if none of the channel operations were ready, none will execute instead. 
 
 ### Examples
-
-`select` lets a single task wait on multiple channel operations. `select` will yield until at least one of the cases is ready. If multiple cases are ready it will choose one randomly. 
 
 ```swift
 

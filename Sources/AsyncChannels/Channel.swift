@@ -52,15 +52,18 @@ public final class Channel<T: Sendable>: @unchecked Sendable {
     private let mutex = FastLock()
     private let capacity: Int
     private var closed = false
-    private var buffer = [T]()
+    private var buffer: UnsafeRingBuffer<T>
     private var sendQueue = [Sender<T>]()
     private var recvQueue = [Receiver<T>]()
 
     public init(capacity: Int = 0) {
         self.capacity = capacity
+        self.buffer = UnsafeRingBuffer(capacity: capacity)
     }
 
     var count: Int {
+        mutex.lock()
+        defer { mutex.unlock() }
         return buffer.count
     }
     
@@ -117,7 +120,7 @@ public final class Channel<T: Sendable>: @unchecked Sendable {
         }
 
         if self.buffer.count < self.capacity {
-            self.buffer.append(value)
+            self.buffer.push(value)
             return true
         }
         return false
@@ -140,13 +143,14 @@ public final class Channel<T: Sendable>: @unchecked Sendable {
     }
     
     private func nonBlockingReceive() -> T? {
-        if let val = buffer.popFirst() {
-            if let sendW = sendQueue.popFirst() {
-                buffer.append(sendW.get())
-            }
-            return val
+        if buffer.isEmpty {
+            return sendQueue.popFirst()?.get()
         }
-        return sendQueue.popFirst()?.get()
+        let val = buffer.pop()
+        if let sendW = sendQueue.popFirst() {
+            buffer.push(sendW.get())
+        }
+        return val
     }
 
     func receive() async -> T? {

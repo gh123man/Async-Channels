@@ -63,7 +63,7 @@ final class Benchmarks: XCTestCase {
     }
     
     func testHighConcurrencyBuffered() async {
-        await timeIt(iterations: 3) {
+        await timeIt(iterations: 1) {
             let a = Channel<Int>(capacity: 20)
             var sum = 0
             

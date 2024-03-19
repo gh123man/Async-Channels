@@ -441,5 +441,4 @@ final class AsyncTest: XCTestCase {
         
         XCTAssertEqual(sum, 100)
     }
-    
 }

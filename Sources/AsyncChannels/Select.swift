@@ -22,7 +22,7 @@ struct RxHandler<T>: SelectProtocol {
             await outFunc(val)
             return true
         }
-        if await chan.isClosed() {
+        if chan.isClosed {
             await outFunc(nil)
             return true
         }

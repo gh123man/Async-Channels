@@ -22,8 +22,10 @@ public final class Channel<T: Sendable>: @unchecked Sendable {
             self.value = value
         }
         
-        func get() async -> U {
-            await self.sema.signal()
+        func get() -> U {
+            Task {
+                await self.sema.signal()
+            }
             return value
         }
         
@@ -47,7 +49,7 @@ public final class Channel<T: Sendable>: @unchecked Sendable {
         }
     }
     
-    private let mutex = AsyncMutex()
+    private let mutex = FastLock()
     private let capacity: Int
     private var closed = false
     private var buffer = [T]()
@@ -64,53 +66,53 @@ public final class Channel<T: Sendable>: @unchecked Sendable {
     
     var selectWaiter: AsyncSemaphore?
     
-    
-    func isClosed() async -> Bool {
-        await mutex.lock()
-        let c = closed
-        await mutex.unlock()
-        return c
+    var isClosed: Bool {
+        mutex.lock()
+        defer { mutex.unlock() }
+        return closed
     }
     
     func receiveOrListen(_ sema: AsyncSemaphore) async -> T? {
-        await mutex.lock()
+        mutex.lock()
         
-        if let val = await nonBlockingReceive() {
-            await mutex.unlock()
+        if let val = nonBlockingReceive() {
+            mutex.unlock()
             return val
         }
         
         if closed {
-            await mutex.unlock()
+            mutex.unlock()
             return nil
         }
         
         self.selectWaiter = sema
-        await mutex.unlock()
+        mutex.unlock()
         return nil
     }
     
     func sendOrListen(_ sema: AsyncSemaphore, value: T) async -> Bool {
-        await mutex.lock()
+        mutex.lock()
         
-        if await nonBlockingSend(value) {
-            await mutex.unlock()
+        if nonBlockingSend(value) {
+            mutex.unlock()
             return true
         }
         
         self.selectWaiter = sema
-        await mutex.unlock()
+        mutex.unlock()
         return false
     }
     
     
-    private func nonBlockingSend(_ value: T) async -> Bool {
+    private func nonBlockingSend(_ value: T) -> Bool {
         if closed {
             fatalError("Cannot send on a closed channel")
         }
         
         if let recvW = recvQueue.popFirst() {
-            await recvW.set(value)
+            Task {
+                await recvW.set(value)
+            }
             return true
         }
 
@@ -123,59 +125,59 @@ public final class Channel<T: Sendable>: @unchecked Sendable {
     
 
     func send(_ value: T) async {
-        await mutex.lock()
-        await selectWaiter?.signal()
+        mutex.lock()
         
-        if await nonBlockingSend(value) {
-            await mutex.unlock()
+        if nonBlockingSend(value) {
+            mutex.unlock()
             return
         }
         
         let sender = Sender<T>(value: value)
         sendQueue.append(sender)
-        await mutex.unlock()
+        mutex.unlock()
+        await selectWaiter?.signal()
         await sender.wait()
     }
     
-    private func nonBlockingReceive() async -> T? {
+    private func nonBlockingReceive() -> T? {
         if let val = buffer.popFirst() {
             if let sendW = sendQueue.popFirst() {
-                buffer.append(await sendW.get())
+                buffer.append(sendW.get())
             }
             return val
         }
-        return await sendQueue.popFirst()?.get()
+        return sendQueue.popFirst()?.get()
     }
 
     func receive() async -> T? {
-        await mutex.lock()
-        await selectWaiter?.signal()
+        mutex.lock()
 
-        if let val = await nonBlockingReceive() {
-            await mutex.unlock()
+        if let val = nonBlockingReceive() {
+            mutex.unlock()
             return val
         }
         
         if closed {
-            await mutex.unlock()
+            mutex.unlock()
             return nil
         }
         
         let receiver = Receiver<T>()
         recvQueue.append(receiver)
-        await mutex.unlock()
+        mutex.unlock()
+        await selectWaiter?.signal()
         return await receiver.get()
     }
     
     func close() async {
-        await mutex.lock()
+        mutex.lock()
         
         closed = true
         
         while let recvW = recvQueue.popFirst() {
             await recvW.set(nil)
         }
-        await mutex.unlock()
+        mutex.unlock()
     }
 }
 

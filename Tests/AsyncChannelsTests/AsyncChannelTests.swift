@@ -117,32 +117,8 @@ final class AsyncTest: XCTestCase {
         await <-done
     }
     
-    func testBig() async {
-
-        let startTime = CFAbsoluteTimeGetCurrent()
-
-        let a = Channel<Int>()
-        var sum = 0
-
-        for _ in (0...100) {
-            Task {
-                for _ in (0...10000) {
-                    await a <- 1
-                }
-            }
-        }
-
-        while sum < 1_000_000 {
-            sum += (await <-a)!
-        }
-
-        let timeElapsed = CFAbsoluteTimeGetCurrent() - startTime
-            print("Time elapsed: \(timeElapsed)")
-    }
-    
     
     func testSimpleSelect() async {
-        
         let c = Channel<String>(capacity: 0)
         let d = Channel<String>(capacity: 0)
         
@@ -437,6 +413,7 @@ final class AsyncTest: XCTestCase {
     }
     
     func testBlockWhenEmpty() async {
+        
 
         let c = Channel<Bool>(capacity: 100)
         let full = Channel<Bool>()

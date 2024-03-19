@@ -38,9 +38,11 @@ public final class Channel<T: Sendable>: @unchecked Sendable {
         private var value: U?
         private var sema = AsyncSemaphore(value: 0)
         
-        func set(_ val: U?) async {
+        func set(_ val: U?) {
             value = val
-            await sema.signal()
+            Task {
+                await sema.signal()
+            }
         }
         
         func get() async -> U? {
@@ -113,9 +115,7 @@ public final class Channel<T: Sendable>: @unchecked Sendable {
         }
         
         if let recvW = recvQueue.popFirst() {
-            Task {
-                await recvW.set(value)
-            }
+            recvW.set(value)
             return true
         }
 
@@ -175,11 +175,10 @@ public final class Channel<T: Sendable>: @unchecked Sendable {
     
     func close() async {
         mutex.lock()
-        
         closed = true
         
         while let recvW = recvQueue.popFirst() {
-            await recvW.set(nil)
+           recvW.set(nil)
         }
         mutex.unlock()
     }

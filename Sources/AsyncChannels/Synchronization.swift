@@ -18,13 +18,19 @@ actor AsyncSemaphore {
             }
         }
     }
-
-    func signal() {
+    
+    private func syncSignal() {
         if let next = continuationQueue.first {
             continuationQueue.removeFirst()
             next.resume()
         } else {
             permits += 1
+        }
+    }
+
+    nonisolated func signal() {
+        Task {
+            await syncSignal()
         }
     }
 }

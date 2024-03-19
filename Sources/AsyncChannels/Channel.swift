@@ -23,9 +23,7 @@ public final class Channel<T: Sendable>: @unchecked Sendable {
         }
         
         func get() -> U {
-            Task {
-                await self.sema.signal()
-            }
+            sema.signal()
             return value
         }
         
@@ -40,9 +38,7 @@ public final class Channel<T: Sendable>: @unchecked Sendable {
         
         func set(_ val: U?) {
             value = val
-            Task {
-                await sema.signal()
-            }
+            sema.signal()
         }
         
         func get() async -> U? {
@@ -137,8 +133,9 @@ public final class Channel<T: Sendable>: @unchecked Sendable {
         
         let sender = Sender<T>(value: value)
         sendQueue.append(sender)
+        selectWaiter?.signal()
         mutex.unlock()
-        await selectWaiter?.signal()
+        
         await sender.wait()
     }
     
@@ -168,8 +165,9 @@ public final class Channel<T: Sendable>: @unchecked Sendable {
         
         let receiver = Receiver<T>()
         recvQueue.append(receiver)
+        selectWaiter?.signal()
+        
         mutex.unlock()
-        await selectWaiter?.signal()
         return await receiver.get()
     }
     

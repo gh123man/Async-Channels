@@ -39,17 +39,14 @@ final class AsyncTest: XCTestCase {
         let done = Channel<Bool>()
 
         Task {
-            print("wait 1")
             await <-a
             await done <- true
         }
         Task {
-            print("wait 2")
             await <-a
             await done <- true
         }
         Task {
-            print("wait 3")
             await <-a
             await done <- true
         }
@@ -61,7 +58,6 @@ final class AsyncTest: XCTestCase {
         await <-done
         await <-done
         await <-done
-        print("Closed")
     }
     
     func testLoopChan() async {

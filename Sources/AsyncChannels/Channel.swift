@@ -75,32 +75,29 @@ public final class Channel<T: Sendable>: @unchecked Sendable {
     
     func receiveOrListen(_ sema: AsyncSemaphore) async -> T? {
         mutex.lock()
+        defer { mutex.unlock() }
         
         if let val = nonBlockingReceive() {
-            mutex.unlock()
             return val
         }
         
         if closed {
-            mutex.unlock()
             return nil
         }
         
-        self.selectWaiter = sema
-        mutex.unlock()
+        selectWaiter = sema
         return nil
     }
     
     func sendOrListen(_ sema: AsyncSemaphore, value: T) async -> Bool {
         mutex.lock()
+        defer { mutex.unlock() }
         
         if nonBlockingSend(value) {
-            mutex.unlock()
             return true
         }
         
-        self.selectWaiter = sema
-        mutex.unlock()
+        selectWaiter = sema
         return false
     }
     
@@ -115,8 +112,8 @@ public final class Channel<T: Sendable>: @unchecked Sendable {
             return true
         }
 
-        if self.buffer.count < self.capacity {
-            self.buffer.push(value)
+        if buffer.count < capacity {
+            buffer.push(value)
             return true
         }
         return false
@@ -173,12 +170,12 @@ public final class Channel<T: Sendable>: @unchecked Sendable {
     
     func close() async {
         mutex.lock()
+        defer { mutex.unlock() }
         closed = true
         
         while let recvW = recvQueue.popFirst() {
            recvW.set(nil)
         }
-        mutex.unlock()
     }
 }
 

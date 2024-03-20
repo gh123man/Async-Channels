@@ -1,7 +1,7 @@
 import Foundation
 
 class UnsafeRingBuffer<T> {
-    private var buffer: UnsafeMutablePointer<T>
+    private var buffer: UnsafeMutablePointer<T?>
     private var read: Int = 0
     private(set) var count: Int = 0
     private let capacity: Int
@@ -12,7 +12,7 @@ class UnsafeRingBuffer<T> {
     
     init(capacity: Int) {
         self.capacity = capacity
-        buffer = UnsafeMutablePointer<T>.allocate(capacity: capacity)
+        buffer = UnsafeMutablePointer<T?>.allocate(capacity: capacity)
     }
     
     deinit {
@@ -34,7 +34,6 @@ class UnsafeRingBuffer<T> {
             count -= 1
             read = mask(read + 1)
         }
-        return buffer.advanced(by: read).move()
+        return buffer.advanced(by: read).move()!
     }
-
 }

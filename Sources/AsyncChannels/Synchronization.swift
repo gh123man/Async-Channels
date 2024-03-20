@@ -2,14 +2,14 @@ import Foundation
 
 actor AsyncSemaphore {
     private var permits: Int
-    private var continuationQueue: [CheckedContinuation<Void, Never>] = []
+    private var continuationQueue: [UnsafeContinuation<Void, Never>] = []
 
     init(value: Int) {
         self.permits = value
     }
 
     func wait() async {
-        await withCheckedContinuation { continuation in
+        await withUnsafeContinuation { continuation in
             if self.permits > 0 {
                 self.permits -= 1
                 continuation.resume()

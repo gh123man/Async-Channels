@@ -14,6 +14,7 @@ struct AppMain {
         await testSingleReaderManyWriter()
         await testHighConcurrency()
         await testHighConcurrencyBuffered()
+        await syncRw()
         await testUnsafeRing()
         await testRing()
     }
@@ -37,9 +38,9 @@ func testSingleReaderManyWriter() async {
         let a = Channel<Int>()
         var sum = 0
         
-        for _ in (0...100) {
+        for _ in (0..<100) {
             Task {
-                for _ in (0...10000) {
+                for _ in (0..<10000) {
                     await a <- 1
                 }
             }
@@ -57,9 +58,9 @@ func testHighConcurrency() async {
         let a = Channel<Int>()
         var sum = 0
         
-        for _ in (0...1000) {
+        for _ in (0..<1000) {
             Task {
-                for _ in (0...1000) {
+                for _ in (0..<1000) {
                     await a <- 1
                 }
             }
@@ -77,9 +78,9 @@ func testHighConcurrencyBuffered() async {
         let a = Channel<Int>(capacity: 20)
         var sum = 0
         
-        for _ in (0...1000) {
+        for _ in (0..<1000) {
             Task {
-                for _ in (0...1000) {
+                for _ in (0..<1000) {
                     await a <- 1
                 }
             }
@@ -87,6 +88,18 @@ func testHighConcurrencyBuffered() async {
         
         while sum < 1_000_000 {
             sum += (await <-a)!
+        }
+    }
+}
+
+func syncRw() async {
+    print(#function)
+    await timeIt(iterations: 3) {
+        let a = Channel<Int>(capacity: 1)
+        
+        for i in (0..<5_000_000) {
+            await a <- i
+            await <-a
         }
     }
 }

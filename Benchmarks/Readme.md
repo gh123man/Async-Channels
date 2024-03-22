@@ -1,4 +1,6 @@
 
+All tests performed on an M1 max
+
 ## Swift channel tests 
 
 Release with default optimizations

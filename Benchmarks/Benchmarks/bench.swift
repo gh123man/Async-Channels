@@ -15,8 +15,9 @@ struct AppMain {
         await testHighConcurrency()
         await testHighConcurrencyBuffered()
         await syncRw()
-        await testUnsafeRing()
-        await testRing()
+//        await syncRwActor()
+//        await testUnsafeRing()
+//        await testRing()
     }
 }
 
@@ -100,6 +101,18 @@ func syncRw() async {
         for i in (0..<5_000_000) {
             await a <- i
             await <-a
+        }
+    }
+}
+
+
+func syncRwActor() async {
+    print(#function)
+    await timeIt(iterations: 3) {
+        for i in (0..<5_000_000) {
+            var t = Thing()
+            await t.set(i)
+            await _ = t.get()
         }
     }
 }

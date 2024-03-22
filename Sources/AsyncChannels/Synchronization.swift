@@ -1,7 +1,8 @@
 import Foundation
 
-actor AsyncSemaphore {
+class AsyncSemaphore {
     private var permits: Int
+    private let mutex = FastLock()
     private var continuationQueue: [UnsafeContinuation<Void, Never>] = []
 
     init(value: Int) {
@@ -10,6 +11,8 @@ actor AsyncSemaphore {
 
     func wait() async {
         await withUnsafeContinuation { continuation in
+            self.mutex.lock()
+            defer { self.mutex.unlock() }
             if self.permits > 0 {
                 self.permits -= 1
                 continuation.resume()
@@ -19,18 +22,14 @@ actor AsyncSemaphore {
         }
     }
     
-    private func syncSignal() {
+    func signal() {
+        self.mutex.lock()
+        defer { self.mutex.unlock() }
         if let next = continuationQueue.first {
             continuationQueue.removeFirst()
             next.resume()
         } else {
             permits += 1
-        }
-    }
-
-    nonisolated func signal() {
-        Task {
-            await syncSignal()
         }
     }
 }

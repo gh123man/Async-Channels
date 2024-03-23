@@ -8,6 +8,8 @@
 import Foundation
 import AsyncChannels
 
+let iterations = 5
+
 @main
 struct AppMain {
     static func main() async throws {
@@ -35,7 +37,7 @@ func timeIt(iterations: Int, block: () async -> ()) async {
 
 func testSingleReaderManyWriter() async {
     print(#function)
-    await timeIt(iterations: 3) {
+    await timeIt(iterations: iterations) {
         let a = Channel<Int>()
         var sum = 0
         
@@ -55,7 +57,7 @@ func testSingleReaderManyWriter() async {
 
 func testHighConcurrency() async {
     print(#function)
-    await timeIt(iterations: 3) {
+    await timeIt(iterations: iterations) {
         let a = Channel<Int>()
         var sum = 0
         
@@ -75,7 +77,7 @@ func testHighConcurrency() async {
 
 func testHighConcurrencyBuffered() async {
     print(#function)
-    await timeIt(iterations: 1) {
+    await timeIt(iterations: iterations) {
         let a = Channel<Int>(capacity: 20)
         var sum = 0
         
@@ -95,7 +97,7 @@ func testHighConcurrencyBuffered() async {
 
 func syncRw() async {
     print(#function)
-    await timeIt(iterations: 3) {
+    await timeIt(iterations: iterations) {
         let a = Channel<Int>(capacity: 1)
         
         for i in (0..<5_000_000) {
@@ -108,7 +110,7 @@ func syncRw() async {
 
 func syncRwActor() async {
     print(#function)
-    await timeIt(iterations: 3) {
+    await timeIt(iterations: iterations) {
         for i in (0..<5_000_000) {
             var t = Thing()
             await t.set(i)
@@ -119,7 +121,7 @@ func syncRwActor() async {
 
 func testUnsafeRing() async {
     print(#function)
-    await timeIt(iterations: 1) {
+    await timeIt(iterations: iterations) {
         
         let r = UnsafeRingBuffer<Int>(capacity: 100)
         for i in (0..<10_000_000) {
@@ -135,7 +137,7 @@ func testUnsafeRing() async {
 
 func testRing() async {
     print(#function)
-    await timeIt(iterations: 1) {
+    await timeIt(iterations: iterations) {
         
         let r = RingBuffer<Int>(capacity: 100)
         for i in (0..<10_000_000) {

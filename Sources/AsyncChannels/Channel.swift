@@ -1,4 +1,5 @@
 import Foundation
+import Collections
 
 infix operator <- :AssignmentPrecedence
 public func <- <T>(c: Channel<T>, value: T) async {
@@ -47,12 +48,12 @@ public final class Channel<T: Sendable>: @unchecked Sendable {
         }
     }
     
-    private let mutex = FastLock()
+    private var mutex = FastLock()
     private let capacity: Int
     private var closed = false
     private var buffer: UnsafeRingBuffer<T>
-    private var sendQueue = [Sender<T>]()
-    private var recvQueue = [Receiver<T>]()
+    private var sendQueue = Deque<Sender<T>>()
+    private var recvQueue = Deque<Receiver<T>>()
 
     public init(capacity: Int = 0) {
         self.capacity = capacity

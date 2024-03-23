@@ -2,7 +2,7 @@ import Foundation
 
 class AsyncSemaphore {
     private var permits: Int
-    private let mutex = FastLock()
+    private var mutex = FastLock()
     private var continuationQueue: [UnsafeContinuation<Void, Never>] = []
 
     init(value: Int) {

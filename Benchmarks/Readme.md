@@ -7,16 +7,16 @@ Release with default optimizations
 
 ```
 testSingleReaderManyWriter()
-Time elapsed: 2.106268366177877
+Time elapsed: 0.8838786125183106
 
 testHighConcurrency()
-Time elapsed: 2.2055516640345254
+Time elapsed: 0.8206615924835206
 
 testHighConcurrencyBuffered()
-Time elapsed: 2.318518042564392 
+Time elapsed: 0.8815396070480347
 
 syncRw()
-Time elapsed: 2.0480897029240928
+Time elapsed: 2.205623197555542
 ```
 
 ## Go channel tests (micro benchmarks)
@@ -34,13 +34,13 @@ BenchmarkSyncRw-10                     	       8	 132789557 ns/op	     112 B/op	
 ## compared results 
 
 `testSingleReaderManyWriter`
-go ~ `6.75x` faster
+go ~ `2.77x` faster
 
 `testHighConcurrency`
-go ~ `6.70x` faster
+go ~ `2.50x` faster
 
 `testHighConcurrencyBuffered`
-go ~ `6.40x` faster
+go ~ `2.44x` faster
 
 `syncRw`
-go ~ `15.42x` faster
+go ~ `16.61x` faster

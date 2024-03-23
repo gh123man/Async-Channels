@@ -2,18 +2,14 @@ import Foundation
 
 #if canImport(Darwin)
 struct FastLock {
-    let unfairLock = {
-        let l = UnsafeMutablePointer<os_unfair_lock>.allocate(capacity: 1)
-        l.initialize(to: os_unfair_lock())
-        return l
-    }()
+    var slock = OSSpinLock()
     
-    func lock() {
-        os_unfair_lock_lock(unfairLock)
+    mutating func lock() {
+        OSSpinLockLock(&slock)
     }
     
-    func unlock() {
-        os_unfair_lock_unlock(unfairLock)
+    mutating func unlock() {
+        OSSpinLockUnlock(&slock)
     }
 }
 

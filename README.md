@@ -2,6 +2,9 @@
 
 Channels for Swift concurrency.
 
+> [!IMPORTANT]   
+> The current state of the `main` branch is stable, but the performance is not very good. Improvements are being made in the [`benchmarking` branch](https://github.com/gh123man/Async-Channels/tree/benchmarking) with incremental results being recorded [here](https://github.com/gh123man/Async-Channels/blob/benchmarking/Benchmarks/Readme.md). Ongoing discussion regarding performance improvements [can be found in this thread.](https://forums.swift.org/t/async-channels-for-swift-concurrency/70752/15)
+
 > Don't communicate by sharing memory; share memory by communicating
 > 
 > \- Rob Pike

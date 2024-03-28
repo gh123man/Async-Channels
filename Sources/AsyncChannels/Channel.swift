@@ -60,13 +60,13 @@ public final class Channel<T: Sendable>: @unchecked Sendable {
     private var mutex = FastLock()
     private let capacity: Int
     private var closed = false
-    private var buffer: UnsafeRingBuffer<T>
+    private var buffer: Deque<T>
     private var sendQueue = Deque<(T, UnsafeContinuation<Void, Never>)>()
     private var recvQueue = Deque<UnsafeContinuation<T?, Never>>()
 
     public init(capacity: Int = 0) {
         self.capacity = capacity
-        self.buffer = UnsafeRingBuffer(capacity: capacity)
+        self.buffer = Deque<T>(minimumCapacity: capacity)
     }
 
     var count: Int {
@@ -127,7 +127,7 @@ public final class Channel<T: Sendable>: @unchecked Sendable {
         }
 
         if buffer.count < capacity {
-            buffer.push(value)
+            buffer.append(value)
             mutex.unlock()
             return true
         }
@@ -163,10 +163,10 @@ public final class Channel<T: Sendable>: @unchecked Sendable {
             }
         }
         
-        let val = buffer.pop()
+        let val = buffer.popFirst()
         
         if let (value, continuation) = sendQueue.popFirst() {
-            buffer.push(value)
+            buffer.append(value)
             mutex.unlock()
             continuation.resume()
         } else {

@@ -377,6 +377,20 @@ final class AsyncTest: XCTestCase {
         }
         
         print((await <-c)!.name)
+        
+        let b = Channel<SomeData>(capacity: 10)
+        
+        Task {
+            await b <- SomeData(name: "bar", age: 21)
+            await b <- SomeData(name: "bar", age: 21)
+            await b <- SomeData(name: "bar", age: 21)
+            await b <- SomeData(name: "bar", age: 21)
+        }
+        
+        print((await <-b)!.name)
+        print((await <-b)!.name)
+        print((await <-b)!.name)
+        print((await <-b)!.name)
     }
     
     func testBlockWhenFull() async {

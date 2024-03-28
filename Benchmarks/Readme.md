@@ -10,11 +10,11 @@ All tests performed on an M1 max
 
 | Test Case  | Go (seconds) | Swift (seconds) | Swift `n` times slower than go  |
 | --------------------------- | ----------- | ----------- | ----- |
-| testSingleReaderManyWriter  | `0.318661688` | `1.292844605` | `4.06x`  |
-| testHighConcurrency         | `0.328830854` | `1.387607598` | `4.22x`  |
-| testHighConcurrencyBuffered | `0.362022931` | `1.330690598` | `3.68x`  |
-| testSyncRw                  | `0.132789557` | `2.225011003` | `16.76x` |
-| testSelect                  | `0.306248166` | `1.589311111` | `5.19x`  |
+| testSingleReaderManyWriter  | `0.318661688` | `1.093256199` | `3.43x`  |
+| testHighConcurrency         | `0.328830854` | `1.163244104` | `3.54x`  |
+| testHighConcurrencyBuffered | `0.362022931` | `1.482958496` | `4.10x`  |
+| testSyncRw                  | `0.132789557` | `2.987084699` | `22.49x` |
+| testSelect                  | `0.306248166` | `1.612218893` | `5.26x`  |
 
 ### Why is swift slower than go?
 

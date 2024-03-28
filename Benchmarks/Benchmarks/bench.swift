@@ -153,32 +153,3 @@ func testSelect() async {
     }
 }
 
-
-
-func combineTest() {
-    let subject = PassthroughSubject<Int, Never>()
-    var cancellables = Set<AnyCancellable>()
-    let queue = DispatchQueue(label: "com.yourapp.queue", attributes: .concurrent)
-    var sum = 0
-
-    // Subscribe to the subject
-    subject
-        .receive(on: RunLoop.main) // Ensure the sum is updated on the main thread
-        .sink(receiveValue: { value in
-            sum += value
-            if sum >= 1_000_000 {
-                print("Sum reached: \(sum)")
-                cancellables.removeAll() // Cancel the subscription once the condition is met
-            }
-        })
-        .store(in: &cancellables)
-
-    // Simulate the goroutines
-    for _ in 0..<100 {
-        queue.async {
-            for _ in 0..<10000 {
-                subject.send(1)
-            }
-        }
-    }
-}

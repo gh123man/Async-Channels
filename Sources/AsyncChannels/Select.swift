@@ -2,27 +2,39 @@ import Foundation
 
 public struct SelectHandler {
     internal let inner: SelectProtocol
+    
+    init(inner: SelectProtocol) {
+        self.inner = inner
+    }
 }
 
 protocol SelectProtocol {
     func handle(_ sm: AsyncSemaphore) async -> Bool
 }
 
+@usableFromInline
 struct RxHandler<T>: SelectProtocol {
-    private var chan: Channel<T>
-    private let outFunc: (T?) async -> ()
     
+    @usableFromInline
+    var chan: Channel<T>
+    
+    @usableFromInline
+    let outFunc: (T?) async -> ()
+    
+    @usableFromInline
     init(chan: Channel<T>, outFunc: @escaping (T?) async -> ()) {
         self.chan = chan
         self.outFunc = outFunc
     }
     
+    @inline(__always)
+    @inlinable
     func handle(_ sm: AsyncSemaphore) async -> Bool {
         if let val = await chan.receiveOrListen(sm) {
             await outFunc(val)
             return true
         }
-        if await chan.isClosed() {
+        if chan.isClosed {
             await outFunc(nil)
             return true
         }
@@ -64,6 +76,7 @@ public struct SelectCollector {
     }
 }
 
+@usableFromInline
 func handle(_ sm: AsyncSemaphore, handlers: [SelectHandler]) async -> Bool {
     var defaultCase: NoneHandler?
     
@@ -77,6 +90,8 @@ func handle(_ sm: AsyncSemaphore, handlers: [SelectHandler]) async -> Bool {
     return await defaultCase?.handle(sm) ?? false
 }
 
+@inlinable
+@inline(__always)
 public func select(@SelectCollector cases: () -> ([SelectHandler])) async {
     let handlers = cases()
     while true {

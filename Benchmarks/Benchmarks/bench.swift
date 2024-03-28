@@ -7,7 +7,6 @@
 
 import Foundation
 import AsyncChannels
-import Combine
 
 let iterations = 10
 

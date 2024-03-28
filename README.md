@@ -1,9 +1,7 @@
 # Async Channels
 
-Channels for Swift concurrency.
+Performant channels for Swift concurrency.
 
-> [!IMPORTANT]   
-> The current state of the `main` branch is stable, but the performance is not very good. Improvements are being made in the [`benchmarking` branch](https://github.com/gh123man/Async-Channels/tree/benchmarking) with incremental results being recorded [here](https://github.com/gh123man/Async-Channels/blob/benchmarking/Benchmarks/Readme.md). Ongoing discussion regarding performance improvements [can be found in this thread.](https://forums.swift.org/t/async-channels-for-swift-concurrency/70752/15)
 
 > Don't communicate by sharing memory; share memory by communicating
 > 
@@ -32,6 +30,10 @@ Task {
 }
 await <-done
 ```
+
+## Benchmarks
+
+See the [Benchmarks](/Benchmarks/) readme for results and comparing with go. 
 
 ## Usage
 
@@ -165,3 +167,8 @@ for _ in (0..<20) {
 ## Notes
 
 If you are looking for a blocking variant of this library for traditional swift concurrency, check out my previous project [Swigo](https://github.com/gh123man/Swigo) which this library is based off of. 
+
+
+# Special Thanks
+
+I could not have gotten this far on my own without the help from the folks over at [forums.swift.org](https://forums.swift.org/t/async-channels-for-swift-concurrency/70752). Especially a big shout-out and thank you to [wadetregaskis](https://forums.swift.org/u/wadetregaskis/summary) for optimizing much of this code and finding the more challenging performance limitations. 

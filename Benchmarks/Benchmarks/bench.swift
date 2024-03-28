@@ -7,8 +7,9 @@
 
 import Foundation
 import AsyncChannels
+import Combine
 
-let iterations = 5
+let iterations = 10
 
 @main
 struct AppMain {
@@ -16,10 +17,8 @@ struct AppMain {
         await testSingleReaderManyWriter()
         await testHighConcurrency()
         await testHighConcurrencyBuffered()
-        await syncRw()
-//        await syncRwActor()
-//        await testUnsafeRing()
-//        await testRing()
+        await testSyncRw()
+        await testSelect()
     }
 }
 
@@ -95,7 +94,7 @@ func testHighConcurrencyBuffered() async {
     }
 }
 
-func syncRw() async {
+func testSyncRw() async {
     print(#function)
     await timeIt(iterations: iterations) {
         let a = Channel<Int>(capacity: 1)
@@ -108,44 +107,47 @@ func syncRw() async {
 }
 
 
-func syncRwActor() async {
-    print(#function)
-    await timeIt(iterations: iterations) {
-        for i in (0..<5_000_000) {
-            var t = Thing()
-            await t.set(i)
-            await _ = t.get()
-        }
-    }
-}
 
-func testUnsafeRing() async {
+func testSelect() async {
     print(#function)
     await timeIt(iterations: iterations) {
+        let a = Channel<Int>()
+        let b = Channel<Int>()
+        let c = Channel<Int>()
+        let d = Channel<Int>()
+        let e = Channel<Int>()
+        let f = Channel<Int>()
         
-        let r = UnsafeRingBuffer<Int>(capacity: 100)
-        for i in (0..<10_000_000) {
-            for _ in (0..<50) {
-                r.push(i)
-            }
-            for _ in (0..<50) {
-                _ = r.pop()
+        for chan in [a, b, c, d, e, f] {
+            Task {
+                for _ in (0..<100_000) {
+                    await chan <- 1
+                }
             }
         }
-    }
-}
-
-func testRing() async {
-    print(#function)
-    await timeIt(iterations: iterations) {
         
-        let r = RingBuffer<Int>(capacity: 100)
-        for i in (0..<10_000_000) {
-            for _ in (0..<50) {
-                r.push(i)
-            }
-            for _ in (0..<50) {
-                _ = r.pop()
+        var sum = 0
+        
+        while sum < 6 * 100_000 {
+            await select {
+                rx(a) {
+                    sum += $0!
+                }
+                rx(b) {
+                    sum += $0!
+                }
+                rx(c) {
+                    sum += $0!
+                }
+                rx(d) {
+                    sum += $0!
+                }
+                rx(e) {
+                    sum += $0!
+                }
+                rx(f) {
+                    sum += $0!
+                }
             }
         }
     }
@@ -153,75 +155,30 @@ func testRing() async {
 
 
 
-class UnsafeRingBuffer<T> {
-    private var buffer: UnsafeMutablePointer<T?>
-    private var read: Int = 0
-    private(set) var count: Int = 0
-    private let capacity: Int
-    
-    var isEmpty: Bool {
-        return count == 0
-    }
-    
-    init(capacity: Int) {
-        self.capacity = capacity
-        buffer = UnsafeMutablePointer<T?>.allocate(capacity: capacity)
-    }
-    
-    deinit {
-        buffer.deinitialize(count: capacity)
-        buffer.deallocate()
-    }
+func combineTest() {
+    let subject = PassthroughSubject<Int, Never>()
+    var cancellables = Set<AnyCancellable>()
+    let queue = DispatchQueue(label: "com.yourapp.queue", attributes: .concurrent)
+    var sum = 0
 
-    private func mask(_ val: Int) -> Int {
-        return val & (capacity - 1)
-    }
+    // Subscribe to the subject
+    subject
+        .receive(on: RunLoop.main) // Ensure the sum is updated on the main thread
+        .sink(receiveValue: { value in
+            sum += value
+            if sum >= 1_000_000 {
+                print("Sum reached: \(sum)")
+                cancellables.removeAll() // Cancel the subscription once the condition is met
+            }
+        })
+        .store(in: &cancellables)
 
-    func push(_ val: T) {
-        buffer.advanced(by: mask(read + count)).pointee = val
-        count += 1
-    }
-
-    func pop() -> T {
-        defer {
-            count -= 1
-            read = mask(read + 1)
+    // Simulate the goroutines
+    for _ in 0..<100 {
+        queue.async {
+            for _ in 0..<10000 {
+                subject.send(1)
+            }
         }
-        return buffer.advanced(by: read).move()!
     }
-}
-
-class RingBuffer<T> {
-    private var buffer: [T?]
-    private var read: Int = 0
-    private(set) var count: Int = 0
-    private let capacity: Int
-    
-    var isEmpty: Bool {
-        return count == 0
-    }
-    
-    init(capacity: Int) {
-        self.capacity = capacity
-        buffer = [T?](repeating: nil, count: capacity)
-    }
-    
-
-    private func mask(_ val: Int) -> Int {
-        return val & (capacity - 1)
-    }
-
-    func push(_ val: T) {
-        buffer[mask(read + count)] = val
-        count += 1
-    }
-
-    func pop() -> T {
-        defer {
-            count -= 1
-            read = mask(read + 1)
-        }
-        return buffer[read]!
-    }
-
 }

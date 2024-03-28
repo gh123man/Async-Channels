@@ -77,12 +77,14 @@ public final class Channel<T: Sendable>: @unchecked Sendable {
     
     var selectWaiter: AsyncSemaphore?
     
+    @usableFromInline
     var isClosed: Bool {
         mutex.lock()
         defer { mutex.unlock() }
         return closed
     }
     
+    @usableFromInline
     func receiveOrListen(_ sema: AsyncSemaphore) async -> T? {
         mutex.lock()
         

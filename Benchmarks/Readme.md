@@ -1,46 +1,29 @@
+# Benchmarks
 
+This sub-project attempts to compare async channels with go and other channel implementations. 
+
+## Results
+
+All swift tests were run with `10` rounds (averaged) with default release optimizations.\
+All Go tests were written as go micro benchmarks.\
 All tests performed on an M1 max
 
-## Swift channel tests 
+| Test Case  | Go (seconds) | Swift (seconds) | Swift `n` times slower than go  |
+| --------------------------- | ----------- | ----------- | ----- |
+| testSingleReaderManyWriter  | `0.318661688` | `1.292844605` | `4.06x`  |
+| testHighConcurrency         | `0.328830854` | `1.387607598` | `4.22x`  |
+| testHighConcurrencyBuffered | `0.362022931` | `1.330690598` | `3.68x`  |
+| testSyncRw                  | `0.132789557` | `2.225011003` | `16.76x` |
+| testSelect                  | `0.306248166` | `1.589311111` | `5.19x`  |
 
-Release with default optimizations
+### Why is swift slower than go?
 
-```
-testSingleReaderManyWriter()
-Time elapsed: 0.8838786125183106
+The Swift compiler will not emit specialized implementations of generic structures (in this case, the channel and it's internals). Instead, it will use runtime generics which have significant overhead. 
 
-testHighConcurrency()
-Time elapsed: 0.8206615924835206
+[wadetregaskis](https://forums.swift.org/u/wadetregaskis/summary) on the swift.org forums [was able to prove this by manually specializing the channel](https://forums.swift.org/t/async-channels-for-swift-concurrency/70752/18). If you have ideas on how to further improve performance, or get the compiler to emit more efficient code, please open an issue or PR! 
 
-testHighConcurrencyBuffered()
-Time elapsed: 0.8815396070480347
+Aside from the above limitations, special care has been taken to use efficient locking structures, queueing, and buffering to achieve as much performance as possible. We have noticed that `OSSpinLock` can achieve even greater throughput, however this API is deprecated and can cause issues in real world applications so `os_unfair_lock` is used instead. With full specialization, the locking strategy matters much less - so hopefully we can eventually achieve that with further optimization or compiler updates. 
 
-syncRw()
-Time elapsed: 2.205623197555542
-```
+## Future work
 
-## Go channel tests (micro benchmarks)
-
-```
-goos: darwin
-goarch: arm64
-pkg: benchmarks
-BenchmarkSingleReaderManyWriter-10     	       4	 318661688 ns/op	   53360 B/op	     202 allocs/op
-BenchmarkHighConcurrency-10            	       4	 328830854 ns/op	   12192 B/op	     127 allocs/op
-BenchmarkHighConcurrencyBuffered-10    	       3	 362022931 ns/op	   20234 B/op	     198 allocs/op
-BenchmarkSyncRw-10                     	       8	 132789557 ns/op	     112 B/op	       1 allocs/op
-```
-
-## compared results 
-
-`testSingleReaderManyWriter`
-go ~ `2.77x` faster
-
-`testHighConcurrency`
-go ~ `2.50x` faster
-
-`testHighConcurrencyBuffered`
-go ~ `2.44x` faster
-
-`syncRw`
-go ~ `16.61x` faster
+This has not yet been benchmarked on linux. Linux uses `pthread_mutex_t` so expect results to differ somewhat. 

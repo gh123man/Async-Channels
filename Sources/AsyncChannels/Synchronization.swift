@@ -1,15 +1,18 @@
 import Foundation
 import Collections
 
+@usableFromInline
 class AsyncSemaphore {
     private var permits: Int
     private var mutex = FastLock()
     private var continuationQueue = Deque<UnsafeContinuation<Void, Never>>()
 
+    @usableFromInline
     init(value: Int) {
         self.permits = value
     }
 
+    @usableFromInline
     func wait() async {
         await withUnsafeContinuation { continuation in
             self.mutex.lock()

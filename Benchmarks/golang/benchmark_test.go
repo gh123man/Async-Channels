@@ -71,3 +71,40 @@ func BenchmarkSyncRw(b *testing.B) {
 		}
 	}
 }
+
+func BenchmarkSelect(b *testing.B) {
+	for i := 0; i < b.N; i++ {
+		a := make(chan int)
+		bc := make(chan int)
+		c := make(chan int)
+		d := make(chan int)
+		e := make(chan int)
+		f := make(chan int)
+
+		for _, channel := range []chan int{a, bc, c, d, e, f} {
+			go func(ch chan int) {
+				for n := 0; n < 100_000; n++ {
+					ch <- 1
+				}
+			}(channel)
+		}
+
+		sum := 0
+		for sum < 6*100_000 {
+			select {
+			case v := <-a:
+				sum += v
+			case v := <-bc:
+				sum += v
+			case v := <-c:
+				sum += v
+			case v := <-d:
+				sum += v
+			case v := <-e:
+				sum += v
+			case v := <-f:
+				sum += v
+			}
+		}
+	}
+}

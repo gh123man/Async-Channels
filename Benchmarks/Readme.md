@@ -1,6 +1,6 @@
 # Benchmarks
 
-This sub-project attempts to compare async channels with go and other channel implementations. 
+This sub-project attempts to compare async channels with golang.
 
 ## Results
 

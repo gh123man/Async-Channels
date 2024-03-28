@@ -2,14 +2,23 @@ import Foundation
 import Collections
 
 infix operator <- :AssignmentPrecedence
+
+@inline(__always)
+@inlinable
 public func <- <T>(c: Channel<T>, value: T) async {
     await c.send(value)
 }
+
+@inline(__always)
+@inlinable
 public func <- <T>(value: inout T?, chan: Channel<T>) async {
     await value = chan.receive()
 }
 
 prefix operator <-
+
+@inline(__always)
+@inlinable
 @discardableResult public prefix func <- <T>(chan: Channel<T>) async -> T? {
     return await chan.receive()
 }
@@ -52,8 +61,8 @@ public final class Channel<T: Sendable>: @unchecked Sendable {
     private let capacity: Int
     private var closed = false
     private var buffer: UnsafeRingBuffer<T>
-    private var sendQueue = Deque<Sender<T>>()
-    private var recvQueue = Deque<Receiver<T>>()
+    private var sendQueue = Deque<(T, UnsafeContinuation<Void, Never>)>()
+    private var recvQueue = Deque<UnsafeContinuation<T?, Never>>()
 
     public init(capacity: Int = 0) {
         self.capacity = capacity
@@ -76,83 +85,99 @@ public final class Channel<T: Sendable>: @unchecked Sendable {
     
     func receiveOrListen(_ sema: AsyncSemaphore) async -> T? {
         mutex.lock()
-        defer { mutex.unlock() }
         
         if let val = nonBlockingReceive() {
             return val
         }
         
         if closed {
+            mutex.unlock()
             return nil
         }
         
         selectWaiter = sema
+        mutex.unlock()
         return nil
     }
     
     func sendOrListen(_ sema: AsyncSemaphore, value: T) async -> Bool {
         mutex.lock()
-        defer { mutex.unlock() }
         
         if nonBlockingSend(value) {
             return true
         }
         
         selectWaiter = sema
+        mutex.unlock()
         return false
     }
     
-    
+    @inline(__always)
     private func nonBlockingSend(_ value: T) -> Bool {
         if closed {
             fatalError("Cannot send on a closed channel")
         }
         
         if let recvW = recvQueue.popFirst() {
-            recvW.set(value)
+            mutex.unlock()
+            recvW.resume(returning: value)
             return true
         }
 
         if buffer.count < capacity {
             buffer.push(value)
+            mutex.unlock()
             return true
         }
+        
         return false
     }
     
-
+    @usableFromInline
     func send(_ value: T) async {
         mutex.lock()
         
         if nonBlockingSend(value) {
-            mutex.unlock()
             return
         }
         
-        let sender = Sender<T>(value: value)
-        sendQueue.append(sender)
-        selectWaiter?.signal()
-        mutex.unlock()
-        
-        await sender.wait()
+        await withUnsafeContinuation { continuation in
+            sendQueue.append((value, continuation))
+            let waiter = selectWaiter
+            mutex.unlock()
+            waiter?.signal()
+        }
     }
     
+    @inline(__always)
     private func nonBlockingReceive() -> T? {
         if buffer.isEmpty {
-            return sendQueue.popFirst()?.get()
+            if let (value, continuation) = sendQueue.popFirst() {
+                mutex.unlock()
+                continuation.resume()
+                return value
+            } else {
+                return nil
+            }
         }
+        
         let val = buffer.pop()
-        if let sendW = sendQueue.popFirst() {
-            buffer.push(sendW.get())
+        
+        if let (value, continuation) = sendQueue.popFirst() {
+            buffer.push(value)
+            mutex.unlock()
+            continuation.resume()
+        } else {
+            mutex.unlock()
         }
         return val
     }
 
+    @usableFromInline
     func receive() async -> T? {
         mutex.lock()
 
         if let val = nonBlockingReceive() {
-            mutex.unlock()
             return val
         }
         
@@ -161,12 +186,12 @@ public final class Channel<T: Sendable>: @unchecked Sendable {
             return nil
         }
         
-        let receiver = Receiver<T>()
-        recvQueue.append(receiver)
-        selectWaiter?.signal()
-        
-        mutex.unlock()
-        return await receiver.get()
+        return await withUnsafeContinuation { continuation in
+            recvQueue.append(continuation)
+            let waiter = selectWaiter
+            mutex.unlock()
+            waiter?.signal()
+        }
     }
     
     func close() async {
@@ -175,7 +200,7 @@ public final class Channel<T: Sendable>: @unchecked Sendable {
         closed = true
         
         while let recvW = recvQueue.popFirst() {
-           recvW.set(nil)
+            recvW.resume(returning: nil)
         }
     }
 }

@@ -52,7 +52,7 @@ final class AsyncTest: XCTestCase {
         }
 
         await <-sleep(for: .milliseconds(100))
-        await a.close()
+        a.close()
 
 
         await <-done
@@ -75,7 +75,7 @@ final class AsyncTest: XCTestCase {
         await a <- true
         await a <- true
         await a <- true
-        await a.close()
+        a.close()
         
         let count = await <-done
 
@@ -90,7 +90,7 @@ final class AsyncTest: XCTestCase {
                 await a <- "a"
             }
             
-            await a.close()
+            a.close()
         }
 
         var count = 0
@@ -109,7 +109,7 @@ final class AsyncTest: XCTestCase {
             await done <- true
         }
         
-        await a.close()
+        a.close()
         await <-done
     }
     
@@ -335,13 +335,13 @@ final class AsyncTest: XCTestCase {
         }
 
         
-        await a.close()
+        a.close()
         await <-done
     }
     
     func testReadClose() async {
         let a = Channel<Bool>()
-        await a.close()
+        a.close()
         await <-a
         await <-a
         await <-a
@@ -355,7 +355,7 @@ final class AsyncTest: XCTestCase {
                 await <-a
             }
         }
-        await a.close()
+        a.close()
         print("Closed")
     }
     

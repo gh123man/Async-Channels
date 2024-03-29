@@ -24,7 +24,7 @@ Task {
 }
 
 await msg <- "hi"
-await msg.close()
+msg.close()
 await <-done
 ```
 </td><td>
@@ -70,7 +70,7 @@ let count = Channel<Int>(capacity: 100)
 for i in (0..<100) {
     await count <- i
 }
-await count.close()
+count.close()
 
 
 let sum = await count.reduce(0) { sum, next in

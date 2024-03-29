@@ -20,7 +20,7 @@ let done = Channel<Bool>()
 await msg <- "Swift"
 await msg <- "❤️"
 await msg <- "Channels"
-await msg.close()
+msg.close()
 
 Task {
     for await message in msg {
@@ -90,7 +90,7 @@ Task {
 }
 
 // Close will send `nil` causing a to resume in the task above
-await a.close() 
+a.close() 
 // done is signaled 
 await <-done
 ```

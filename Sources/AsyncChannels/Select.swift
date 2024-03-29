@@ -30,7 +30,7 @@ struct RxHandler<T>: SelectProtocol {
     @inline(__always)
     @inlinable
     func handle(_ sm: AsyncSemaphore) async -> Bool {
-        if let val = await chan.receiveOrListen(sm) {
+        if let val = chan.receiveOrListen(sm) {
             await outFunc(val)
             return true
         }
@@ -64,8 +64,8 @@ struct TxHandler<T>: SelectProtocol {
         self.val = val
     }
     
-    func handle(_ sm: AsyncSemaphore) async -> Bool {
-        return await chan.sendOrListen(sm, value: val)
+    func handle(_ sm: AsyncSemaphore) -> Bool {
+        return chan.sendOrListen(sm, value: val)
     }
 }
 

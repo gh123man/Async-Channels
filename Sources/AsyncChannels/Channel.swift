@@ -85,7 +85,7 @@ public final class Channel<T: Sendable>: @unchecked Sendable {
     }
     
     @usableFromInline
-    func receiveOrListen(_ sema: AsyncSemaphore) async -> T? {
+    func receiveOrListen(_ sema: AsyncSemaphore) -> T? {
         mutex.lock()
         
         if let val = nonBlockingReceive() {
@@ -102,7 +102,7 @@ public final class Channel<T: Sendable>: @unchecked Sendable {
         return nil
     }
     
-    func sendOrListen(_ sema: AsyncSemaphore, value: T) async -> Bool {
+    func sendOrListen(_ sema: AsyncSemaphore, value: T) -> Bool {
         mutex.lock()
         
         if nonBlockingSend(value) {
@@ -196,7 +196,7 @@ public final class Channel<T: Sendable>: @unchecked Sendable {
         }
     }
     
-    func close() async {
+    func close() {
         mutex.lock()
         defer { mutex.unlock() }
         closed = true

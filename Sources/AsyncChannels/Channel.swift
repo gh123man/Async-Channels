@@ -196,7 +196,7 @@ public final class Channel<T: Sendable>: @unchecked Sendable {
         }
     }
     
-    func close() {
+    public func close() {
         mutex.lock()
         defer { mutex.unlock() }
         closed = true

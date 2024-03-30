@@ -1,24 +1,17 @@
-//
-//  main.swift
-//  Benchmarks
-//
-//  Created by Brian Floersch on 3/19/24.
-//
-
 import Foundation
 import AsyncChannels
+import CoreFoundation
 
 let iterations = 10
 
-@main
-struct AppMain {
-    static func main() async throws {
-        await testSingleReaderManyWriter()
-        await testHighConcurrency()
-        await testHighConcurrencyBuffered()
-        await testSyncRw()
-        await testSelect()
-    }
+await run()
+
+func run() async {
+    await testSingleReaderManyWriter()
+    await testHighConcurrency()
+    await testHighConcurrencyBuffered()
+    await testSyncRw()
+    await testSelect()
 }
 
 func timeIt(iterations: Int, block: () async -> ()) async {

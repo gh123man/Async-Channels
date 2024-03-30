@@ -1,10 +1,13 @@
 import Foundation
 import AsyncChannels
 import CoreFoundation
+import AsyncAlgorithms
+
 
 let iterations = 10
 
 await run()
+await runAsyncAlg()
 
 func run() async {
     await testSingleReaderManyWriter()
@@ -12,6 +15,11 @@ func run() async {
     await testHighConcurrencyBuffered()
     await testSyncRw()
     await testSelect()
+}
+
+func runAsyncAlg() async {
+    await testAsyncAlgSingleReaderManyWriter()
+    await testAsyncAlgSingleHighConcurrency()
 }
 
 func timeIt(iterations: Int, block: () async -> ()) async {
@@ -145,3 +153,51 @@ func testSelect() async {
     }
 }
 
+
+// Compare to async algorithms channels
+
+func testAsyncAlgSingleReaderManyWriter() async {
+    print(#function)
+    await timeIt(iterations: iterations) {
+        let a = AsyncChannel<Int>()
+        var sum = 0
+        
+        for _ in (0..<100) {
+            Task {
+                for _ in (0..<10000) {
+                    await a.send(1)
+                }
+            }
+        }
+        
+        for await n in a {
+            sum += n
+            if sum >= 1_000_000 {
+                a.finish()
+            }
+        }
+    }
+}
+
+func testAsyncAlgSingleHighConcurrency() async {
+    print(#function)
+    await timeIt(iterations: iterations) {
+        let a = AsyncChannel<Int>()
+        var sum = 0
+        
+        for _ in (0..<1000) {
+            Task {
+                for _ in (0..<1000) {
+                    await a.send(1)
+                }
+            }
+        }
+        
+        for await n in a {
+            sum += n
+            if sum >= 1_000_000 {
+                a.finish()
+            }
+        }
+    }
+}

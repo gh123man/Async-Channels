@@ -15,13 +15,15 @@ let package = Package(
     ],
     dependencies: [
         // Add a dependency on a package located in a directory relative to this file.
-        .package(name: "AsyncChannels", path: "../")
+        .package(name: "AsyncChannels", path: "../"),
+        .package(url: "https://github.com/apple/swift-async-algorithms", from: "1.0.0")
     ],
     targets: [
         .target(
             name: "Benchmarks",
             dependencies: [
-                .product(name: "AsyncChannels", package: "AsyncChannels")
+                .product(name: "AsyncChannels", package: "AsyncChannels"),
+                .product(name: "AsyncAlgorithms", package: "swift-async-algorithms")
             ],
             swiftSettings: [
                 .unsafeFlags(["-O"], .when(configuration: .release))

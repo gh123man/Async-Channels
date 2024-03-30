@@ -2,11 +2,13 @@
 
 This sub-project attempts to compare async channels with golang.
 
-## Results
+## Setup
 
 All swift tests were run with `10` rounds (averaged) with default release optimizations.\
 All Go tests were written as go micro benchmarks.\
 All tests performed on an M1 max
+
+## Swift vs Go
 
 | Test Case  | Go (seconds) | Swift (seconds) | Swift `n` times slower than go  |
 | --------------------------- | ----------- | ----------- | ----- |
@@ -15,6 +17,17 @@ All tests performed on an M1 max
 | testHighConcurrencyBuffered | `0.362022931` | `1.482958496` | `4.10x`  |
 | testSyncRw                  | `0.132789557` | `2.987084699` | `22.49x` |
 | testSelect                  | `0.306248166` | `1.612218893` | `5.26x`  |
+
+## Async Channels vs Async Algorithms AsyncChannel
+
+Apple has their own channel implementation in the [swift-async-algorithms package](https://github.com/apple/swift-async-algorithms/blob/main/Sources/AsyncAlgorithms/AsyncAlgorithms.docc/Guides/Channel.md). We cannot compare every benchmark since it does not support buffering or select. 
+
+| Test Case  | This Library | Async Algorithms `AsyncChannel` | This library `n` times faster   |
+| --------------------------- | ----------- | ----------- | ----- |
+| testSingleReaderManyWriter  | `1.093256199` | `6.111190903` | `5.59x`  |
+| testHighConcurrency         | `1.163244104` | `8.512602198` | `7.32x`  |
+
+`AsyncChannels` is significantly faster in both scenarios.
 
 ### Why is swift slower than go?
 

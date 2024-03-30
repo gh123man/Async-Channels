@@ -27,8 +27,6 @@ Apple has their own channel implementation in the [swift-async-algorithms packag
 | testSingleReaderManyWriter  | `1.093256199` | `6.111190903` | `5.59x`  |
 | testHighConcurrency         | `1.163244104` | `8.512602198` | `7.32x`  |
 
-`AsyncChannels` is significantly faster in both scenarios.
-
 ### Why is swift slower than go?
 
 The Swift compiler will not emit specialized implementations of generic structures (in this case, the channel and it's internals). Instead, it will use runtime generics which have significant overhead. 

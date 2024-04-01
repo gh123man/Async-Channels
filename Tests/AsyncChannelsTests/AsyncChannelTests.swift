@@ -2,9 +2,10 @@ import XCTest
 @testable import AsyncChannels
 
 final class AsyncTest: XCTestCase {
+    // MARK: Utils
     
     func sleep(for time: Duration) -> Channel<Bool> {
-       let signal = Channel<Bool>(capacity: 1)
+       let signal = Channel<Bool>()
        Task {
            try? await Task.sleep(for: time)
            await signal <- true
@@ -12,16 +13,43 @@ final class AsyncTest: XCTestCase {
        return signal
     }
     
-    
-    override func setUp() {
-        super.setUp()
+    func failAfter(duration: Duration) -> Channel<Bool> {
+        let stop = Channel<Bool>()
+        Task {
+            await select {
+                rx(stop)
+                rx(sleep(for: duration)) {
+                    XCTFail("Test timed out")
+                    exit(1)
+                }
+            }
+        }
+        return stop
     }
     
-    override func tearDown() {
-        super.tearDown()
+    func assertChanRx<T: Equatable>(_ channel: Channel<T>, _ expecting: T) async {
+        guard let v = await <-channel else {
+            XCTFail()
+            return
+        }
+        XCTAssertEqual(v, expecting)
     }
     
-    func testSimple() async {
+    var stopTimeout: Channel<Bool>?
+    
+    override func setUp() async throws {
+        try await super.setUp()
+        stopTimeout = failAfter(duration: .seconds(5))
+    }
+    
+    override func tearDown() async throws {
+        try await super.tearDown()
+        await stopTimeout? <- true
+    }
+    
+    // MARK: Tests
+    
+    func testUnbuffered() async {
         
         let a = Channel<Int>()
         let b = Channel<Int>()
@@ -51,9 +79,7 @@ final class AsyncTest: XCTestCase {
             await done <- true
         }
 
-        await <-sleep(for: .milliseconds(100))
         a.close()
-
 
         await <-done
         await <-done
@@ -83,20 +109,17 @@ final class AsyncTest: XCTestCase {
     }
     
     func testCloseChan() async {
-        let a = Channel<String>(capacity: 10)
+        let a = Channel<Int>(capacity: 10)
 
         Task {
             for _ in (0..<10) {
-                await a <- "a"
+                await a <- 1
             }
             
             a.close()
         }
 
-        var count = 0
-        while await <-a != nil {
-            count += 1
-        }
+        let count = await a.reduce(0) { $0 + $1 }
         XCTAssertEqual(10, count)
     }
     
@@ -115,29 +138,34 @@ final class AsyncTest: XCTestCase {
     
     
     func testSimpleSelect() async {
-        let c = Channel<String>(capacity: 0)
-        let d = Channel<String>(capacity: 0)
+        let c = Channel<String>()
+        let d = Channel<String>()
+        let result = Channel<String>(capacity: 2)
         
         Task {
             await c <- "foo"
             await d <- "bar"
-            
         }
         
         await select {
-            rx(d) { print($0!) }
-            rx(c) { print($0!) }
+            rx(d) { await result <- $0! }
+            rx(c) { await result <- $0! }
         }
         
         await select {
-            rx(d) { print($0!) }
-            rx(c) { print($0!) }
+            rx(d) { await result <- $0! }
+            rx(c) { await result <- $0! }
         }
+        result.close()
+        
+        let r = await result.reduce(into: []) { $0.append($1) }
+        XCTAssertEqual(["foo", "bar"].sorted(), r.sorted())
     }
     
     func testBufferSelect() async {
         let c = Channel<String>(capacity: 3)
         let d = Channel<String>(capacity: 3)
+        let result = Channel<String>(capacity: 6)
 
         await c <- "foo"
         await c <- "foo"
@@ -148,10 +176,14 @@ final class AsyncTest: XCTestCase {
 
         for _ in (0..<6) {
             await select {
-                rx(d) { print($0!) }
-                rx(c) { print($0!) }
+                rx(d) { await result <- $0! }
+                rx(c) { await result <- $0! }
             }
         }
+        result.close()
+        
+        let r = await result.reduce(into: []) { $0.append($1) }
+        XCTAssertEqual(["foo", "foo", "foo", "bar", "bar", "bar"].sorted(), r.sorted())
     }
     
     func testSelectDefault() async {
@@ -172,11 +204,9 @@ final class AsyncTest: XCTestCase {
                     XCTFail()
                 }
                 rx(c) {
-                    print($0!)
                     cCall += 1
                 }
                 none {
-                    print("yay")
                     await validate <- true
                 }
             }
@@ -185,8 +215,7 @@ final class AsyncTest: XCTestCase {
         Task { await drain() }
         Task { await drain() }
 
-        let result = await <-validate
-        XCTAssertTrue(result!)
+        await assertChanRx(validate, true)
         XCTAssertEqual(cCall, 1)
     }
     
@@ -194,18 +223,21 @@ final class AsyncTest: XCTestCase {
 
         let c = Channel<Bool>(capacity: 1)
         await c <- true
+        let result = Channel<Bool>()
 
         Task {
             await select {
-                rx(c) { print("c") }
+                rx(c) { await result <- true }
                 none { XCTFail() }
             }
 
             await select {
                 rx(c) { XCTFail() }
-                none { print("none") }
+                none { await result <- true  }
             }
         }
+        await <-result
+        await <-result
     }
     
     func testManyToOne() async {
@@ -272,17 +304,17 @@ final class AsyncTest: XCTestCase {
         var done = false
         while !done {
             await select {
-                rx(a) { print($0!) }
-                rx(b) { print($0!) }
-                rx(c) { print($0!) }
-                rx(d) { print($0!) }
+                rx(a) { count += 1 }
+                rx(b) { count += 1 }
+                rx(c) { count += 1 }
+                rx(d) { count += 1 }
                 none {
                     done = true
                 }
             }
-            count += 1
+            
         }
-        XCTAssertEqual(41, count)
+        XCTAssertEqual(40, count)
     }
     
     func testTx() async {
@@ -295,10 +327,10 @@ final class AsyncTest: XCTestCase {
 
         for _ in (0..<20) {
             await select {
-                rx(a) { print($0!) }
+                rx(a)
                 tx(b, "b")
                 none {
-                    print("NONE")
+                    XCTFail()
                 }
             }
         }
@@ -313,7 +345,6 @@ final class AsyncTest: XCTestCase {
                 }
                 none {
                     done = true
-                    print("Done")
                 }
             }
         }
@@ -323,15 +354,17 @@ final class AsyncTest: XCTestCase {
     
     func testTxHandler() async {
         let a = Channel<String>(capacity: 1)
+        let testChan = Channel<Bool>(capacity: 1)
         
         await select {
             tx(a, "b") {
-                print("Pass")
+                await testChan <- true
             }
             none {
                 XCTFail()
             }
         }
+        await assertChanRx(testChan, true)
     }
     
     func testCloseSelect() async {
@@ -369,7 +402,6 @@ final class AsyncTest: XCTestCase {
             }
         }
         a.close()
-        print("Closed")
     }
     
     class SomeData {
@@ -381,6 +413,7 @@ final class AsyncTest: XCTestCase {
             self.age = age
         }
     }
+    
     func testStructSend() async {
         
         let c = Channel<SomeData>()
@@ -397,13 +430,15 @@ final class AsyncTest: XCTestCase {
             await b <- SomeData(name: "bar", age: 21)
             await b <- SomeData(name: "bar", age: 21)
             await b <- SomeData(name: "bar", age: 21)
-            await b <- SomeData(name: "bar", age: 21)
+            b.close()
         }
         
-        print((await <-b)!.name)
-        print((await <-b)!.name)
-        print((await <-b)!.name)
-        print((await <-b)!.name)
+        var count = 0
+        for await name in b.map({ $0.name }) {
+            XCTAssertEqual(name, "bar")
+            count += 1
+        }
+        XCTAssertEqual(count, 3)
     }
     
     func testBlockWhenFull() async {
@@ -422,7 +457,7 @@ final class AsyncTest: XCTestCase {
                 }
             }
             await blocked <- true
-            await c.close()
+            c.close()
         }
         
         await <-blocked

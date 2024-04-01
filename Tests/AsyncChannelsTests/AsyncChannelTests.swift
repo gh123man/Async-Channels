@@ -321,6 +321,19 @@ final class AsyncTest: XCTestCase {
         XCTAssertEqual(10, countB)
     }
     
+    func testTxHandler() async {
+        let a = Channel<String>(capacity: 1)
+        
+        await select {
+            tx(a, "b") {
+                print("Pass")
+            }
+            none {
+                XCTFail()
+            }
+        }
+    }
+    
     func testCloseSelect() async {
         let a = Channel<String>(capacity: 10)
         let done = Channel<Bool>()

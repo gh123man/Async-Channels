@@ -147,6 +147,16 @@ Swift has reserve words for `case` and `default` and the operator support is not
 <tr>
 <td> 
 
+`tx(c, "foo") { ... }`
+</td><td>
+
+`case c <- "foo": ...`
+</td>
+</tr>
+
+<tr>
+<td> 
+
 `none { ... }`
 </td><td>
 

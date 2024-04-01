@@ -118,7 +118,9 @@ The loop will break when the channel is closed.
 
 `rx(c) { v in ... }` receive a value and do something with it. 
 
-`tx(c, "foo")` send a value
+`tx(c, "foo")` send a value and do nothing.
+
+`tx(c, "foo") { ... }` run some code if a send is successful. 
 
 `none { ... }` if none of the channel operations were ready, none will execute instead. 
 

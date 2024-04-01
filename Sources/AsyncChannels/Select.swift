@@ -12,23 +12,16 @@ protocol SelectProtocol {
     func handle(_ sm: AsyncSemaphore) async -> Bool
 }
 
-@usableFromInline
 struct RxHandler<T>: SelectProtocol {
     
-    @usableFromInline
-    var chan: Channel<T>
+    private var chan: Channel<T>
+    private let outFunc: (T?) async -> ()
     
-    @usableFromInline
-    let outFunc: (T?) async -> ()
-    
-    @usableFromInline
     init(chan: Channel<T>, outFunc: @escaping (T?) async -> ()) {
         self.chan = chan
         self.outFunc = outFunc
     }
     
-    @inline(__always)
-    @inlinable
     func handle(_ sm: AsyncSemaphore) async -> Bool {
         if let val = chan.receiveOrListen(sm) {
             await outFunc(val)
@@ -58,14 +51,20 @@ struct NoneHandler: SelectProtocol {
 struct TxHandler<T>: SelectProtocol {
     private var chan: Channel<T>
     private let val: T
+    private let onSend: () async -> ()
     
-    init(chan: Channel<T>, val: T) {
+    init(chan: Channel<T>, val: T, onSend: @escaping () async -> ()) {
         self.chan = chan
         self.val = val
+        self.onSend = onSend
     }
     
-    func handle(_ sm: AsyncSemaphore) -> Bool {
-        return chan.sendOrListen(sm, value: val)
+    func handle(_ sm: AsyncSemaphore) async -> Bool {
+        if chan.sendOrListen(sm, value: val) {
+            await onSend()
+            return true
+        }
+        return false
     }
 }
 
@@ -116,7 +115,11 @@ public func rx<T>(_ chan: Channel<T>) -> SelectHandler {
 }
 
 public func tx<T>(_ chan: Channel<T>, _ val: T) -> SelectHandler {
-    return SelectHandler(inner: TxHandler(chan: chan, val: val))
+    return SelectHandler(inner: TxHandler(chan: chan, val: val, onSend: {}))
+}
+
+public func tx<T>(_ chan: Channel<T>, _ val: T, _ onSend: @escaping () async -> ()) -> SelectHandler {
+    return SelectHandler(inner: TxHandler(chan: chan, val: val, onSend: onSend))
 }
 
 public func none(handler: @escaping () async -> ()) -> SelectHandler {

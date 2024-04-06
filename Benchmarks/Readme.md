@@ -12,11 +12,11 @@ All tests performed on an M1 max
 
 | Test Case  | Go (seconds) | Swift (seconds) | Swift `n` times slower than go  |
 | --------------------------- | ----------- | ----------- | ----- |
-| testSingleReaderManyWriter  | `0.318661688` | `1.093256199` | `3.43x`  |
-| testHighConcurrency         | `0.328830854` | `1.163244104` | `3.54x`  |
-| testHighConcurrencyBuffered | `0.362022931` | `1.482958496` | `4.10x`  |
-| testSyncRw                  | `0.132789557` | `2.987084699` | `22.49x` |
-| testSelect                  | `0.306248166` | `1.612218893` | `5.26x`  |
+| testSingleReaderManyWriter  | `0.318661688` | `0.7567623973` | `2.37x`  |
+| testHighConcurrency         | `0.328830854` | `0.7811600089` | `2.38x`  |
+| testHighConcurrencyBuffered | `0.362022931` | `1.191550505` | `3.29x`  |
+| testSyncRw                  | `0.132789557` | `1.517975307` | `11.43x` |
+| testSelect                  | `0.306248166` | `1.376920402` | `4.50x`  |
 
 ## Async Channels vs Async Algorithms AsyncChannel
 
@@ -24,8 +24,8 @@ Apple has their own channel implementation in the [swift-async-algorithms packag
 
 | Test Case  | This Library | Async Algorithms `AsyncChannel` | This library `n` times faster   |
 | --------------------------- | ----------- | ----------- | ----- |
-| testSingleReaderManyWriter  | `1.093256199` | `6.111190903` | `5.59x`  |
-| testHighConcurrency         | `1.163244104` | `8.512602198` | `7.32x`  |
+| testSingleReaderManyWriter  | `0.7567623973` | `5.884461689` | `7.78x`  |
+| testHighConcurrency         | `0.7811600089` | `8.240125799` | `10.55x`  |
 
 ### Why is swift slower than go?
 

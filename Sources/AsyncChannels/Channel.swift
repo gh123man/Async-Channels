@@ -1,5 +1,4 @@
 import Foundation
-import Collections
 
 infix operator <- :AssignmentPrecedence
 
@@ -24,49 +23,16 @@ prefix operator <-
 }
 
 public final class Channel<T: Sendable>: @unchecked Sendable {
-    class Sender<U> {
-        private var value: U
-        private var sema = AsyncSemaphore(value: 0)
-        
-        init(value: U) {
-            self.value = value
-        }
-        
-        func get() -> U {
-            sema.signal()
-            return value
-        }
-        
-        func wait() async {
-            await sema.wait()
-        }
-    }
-    
-    class Receiver<U> {
-        private var value: U?
-        private var sema = AsyncSemaphore(value: 0)
-        
-        func set(_ val: U?) {
-            value = val
-            sema.signal()
-        }
-        
-        func get() async -> U? {
-            await sema.wait()
-            return value
-        }
-    }
-    
     private var mutex = FastLock()
     private let capacity: Int
     private var closed = false
-    private var buffer: Deque<T>
-    private var sendQueue = Deque<(T, UnsafeContinuation<Void, Never>)>()
-    private var recvQueue = Deque<UnsafeContinuation<T?, Never>>()
+    private var buffer: LinkedList<T>
+    private var sendQueue = LinkedList<(T, UnsafeContinuation<Void, Never>)>()
+    private var recvQueue = LinkedList<UnsafeContinuation<T?, Never>>()
 
     public init(capacity: Int = 0) {
         self.capacity = capacity
-        self.buffer = Deque<T>(minimumCapacity: capacity)
+        self.buffer = LinkedList<T>()
     }
 
     var count: Int {
@@ -120,14 +86,15 @@ public final class Channel<T: Sendable>: @unchecked Sendable {
             fatalError("Cannot send on a closed channel")
         }
         
-        if let recvW = recvQueue.popFirst() {
+        if !recvQueue.isEmpty {
+            let r = recvQueue.pop()!
             mutex.unlock()
-            recvW.resume(returning: value)
+            r.resume(returning: value)
             return true
         }
 
         if buffer.count < capacity {
-            buffer.append(value)
+            buffer.push(value)
             mutex.unlock()
             return true
         }
@@ -144,7 +111,7 @@ public final class Channel<T: Sendable>: @unchecked Sendable {
         }
         
         await withUnsafeContinuation { continuation in
-            sendQueue.append((value, continuation))
+            sendQueue.push((value, continuation))
             let waiter = selectWaiter
             mutex.unlock()
             waiter?.signal()
@@ -154,7 +121,8 @@ public final class Channel<T: Sendable>: @unchecked Sendable {
     @inline(__always)
     private func nonBlockingReceive() -> T? {
         if buffer.isEmpty {
-            if let (value, continuation) = sendQueue.popFirst() {
+            if !sendQueue.isEmpty {
+                let (value, continuation) = sendQueue.pop()!
                 mutex.unlock()
                 continuation.resume()
                 return value
@@ -163,10 +131,11 @@ public final class Channel<T: Sendable>: @unchecked Sendable {
             }
         }
         
-        let val = buffer.popFirst()
+        let val = buffer.pop()
         
-        if let (value, continuation) = sendQueue.popFirst() {
-            buffer.append(value)
+        if !sendQueue.isEmpty {
+            let (value, continuation) = sendQueue.pop()!
+            buffer.push(value)
             mutex.unlock()
             continuation.resume()
         } else {
@@ -189,7 +158,7 @@ public final class Channel<T: Sendable>: @unchecked Sendable {
         }
         
         return await withUnsafeContinuation { continuation in
-            recvQueue.append(continuation)
+            recvQueue.push(continuation)
             let waiter = selectWaiter
             mutex.unlock()
             waiter?.signal()
@@ -201,11 +170,8 @@ public final class Channel<T: Sendable>: @unchecked Sendable {
         defer { mutex.unlock() }
         closed = true
         
-        while let recvW = recvQueue.popFirst() {
+        while let recvW = recvQueue.pop() {
             recvW.resume(returning: nil)
         }
     }
 }
-
-
-

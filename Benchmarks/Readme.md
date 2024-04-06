@@ -24,44 +24,36 @@ All tests performed on an M1 max
 
 The below results are from running the whole benchmark suit which covers multiple data types. 
 
-
-```
-("testSingleReaderManyWriter(_:) Int", 0.6841711044311524)
-("testHighConcurrency(_:) Int", 0.7190240025520325)
-("testHighConcurrencyBuffered(_:) Int", 1.103571593761444)
-("testSyncRw(_:) Int", 1.5079661011695862)
-("testSelect(_:) Int", 1.54532790184021)
-
-("testSingleReaderManyWriter(_:) String", 0.8109323024749756)
-("testHighConcurrency(_:) String", 0.8379721999168396)
-("testHighConcurrencyBuffered(_:) String", 1.1374988079071044)
-("testSyncRw(_:) String", 1.7057185053825379)
-("testSelect(_:) String", 1.5620223045349122)
-
-("testSingleReaderManyWriter(_:) ValueData", 0.7498844027519226)
-("testHighConcurrency(_:) ValueData", 0.7715810060501098)
-("testHighConcurrencyBuffered(_:) ValueData", 1.1586477041244507)
-("testSyncRw(_:) ValueData", 1.517892301082611)
-("testSelect(_:) ValueData", 1.5599609017372131)
-
-("testSingleReaderManyWriter(_:) RefData", 0.8706925988197327)
-("testHighConcurrency(_:) RefData", 0.9256610989570617)
-("testHighConcurrencyBuffered(_:) RefData", 1.186893892288208)
-("testSyncRw(_:) RefData", 1.6812219023704529)
-("testSelect(_:) RefData", 1.5434199810028075)
-
-("testAsyncAlgSingleReaderManyWriter(_:) Int", 5.4360926985740665)
-("testAsyncAlgSingleHighConcurrency(_:) Int", 7.373045003414154)
-
-("testAsyncAlgSingleReaderManyWriter(_:) String", 5.395480096340179)
-("testAsyncAlgSingleHighConcurrency(_:) String", 7.339814698696136)
-
-("testAsyncAlgSingleReaderManyWriter(_:) ValueData", 5.392919993400573)
-("testAsyncAlgSingleHighConcurrency(_:) ValueData", 7.33357390165329)
-
-("testAsyncAlgSingleReaderManyWriter(_:) RefData", 5.391775095462799)
-("testAsyncAlgSingleHighConcurrency(_:) RefData", 7.327817296981811)
-```
+| Test case                             | Data type   | Result (seconds) |
+|---------------------------------------|-------------|------------------|
+| testSingleReaderManyWriter            | `Int`       | `0.684`          |
+| testHighConcurrency                   | `Int`       | `0.719`          |
+| testHighConcurrencyBuffered           | `Int`       | `1.104`          |
+| testSyncRw                            | `Int`       | `1.508`          |
+| testSelect                            | `Int`       | `1.545`          |
+| testSingleReaderManyWriter            | `String`    | `0.811`          |
+| testHighConcurrency                   | `String`    | `0.838`          |
+| testHighConcurrencyBuffered           | `String`    | `1.137`          |
+| testSyncRw                            | `String`    | `1.706`          |
+| testSelect                            | `String`    | `1.562`          |
+| testSingleReaderManyWriter            | `ValueData` | `0.750`          |
+| testHighConcurrency                   | `ValueData` | `0.772`          |
+| testHighConcurrencyBuffered           | `ValueData` | `1.159`          |
+| testSyncRw                            | `ValueData` | `1.518`          |
+| testSelect                            | `ValueData` | `1.560`          |
+| testSingleReaderManyWriter            | `RefData`   | `0.871`          |
+| testHighConcurrency                   | `RefData`   | `0.926`          |
+| testHighConcurrencyBuffered           | `RefData`   | `1.187`          |
+| testSyncRw                            | `RefData`   | `1.681`          |
+| testSelect                            | `RefData`   | `1.543`          |
+| testAsyncAlgSingleReaderManyWriter    | `Int`       | `5.436`          |
+| testAsyncAlgSingleHighConcurrency     | `Int`       | `7.373`          |
+| testAsyncAlgSingleReaderManyWriter    | `String`    | `5.395`          |
+| testAsyncAlgSingleHighConcurrency     | `String`    | `7.340`          |
+| testAsyncAlgSingleReaderManyWriter    | `ValueData` | `5.393`          |
+| testAsyncAlgSingleHighConcurrency     | `ValueData` | `7.334`          |
+| testAsyncAlgSingleReaderManyWriter    | `RefData`   | `5.392`          |
+| testAsyncAlgSingleHighConcurrency     | `RefData`   | `7.328`          |
 
 ## Async Channels vs Async Algorithms AsyncChannel
 

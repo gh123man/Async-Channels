@@ -86,6 +86,26 @@ final class AsyncTest: XCTestCase {
         await <-done
     }
     
+    func testBufferOrdering() async {
+        let a = Channel<Int>(capacity: 2)
+        let resume = Channel<Bool>()
+        let done = Channel<Bool>()
+
+        Task {
+            await a <- 1
+            await a <- 2
+            await resume <- true
+            await a <- 3
+            await done <- true
+        }
+        await <-resume
+
+        await assertChanRx(a, 1)
+        await assertChanRx(a, 2)
+        await assertChanRx(a, 3)
+        await <-done
+    }
+    
     func testLoopChan() async {
         let a = Channel<Bool>(capacity: 10)
         let done = Channel<Int>()

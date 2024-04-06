@@ -1,0 +1,20 @@
+name: CI - Run tests
+
+on:
+  push:
+    branches: [ main ]
+  pull_request:
+    branches: [ main ]
+
+jobs:
+  build:
+    strategy:
+        matrix:
+          os: [ubuntu-latest]
+    runs-on: ${{ matrix.os }}
+    steps:
+    - uses: docker/build-push-action@v3
+      with:
+        push: false
+        tags: runtests
+        file: Dockerfile.tests

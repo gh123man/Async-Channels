@@ -1,0 +1,10 @@
+FROM swift:5.9-jammy as build
+
+WORKDIR /build
+
+COPY ./Package.* ./
+RUN swift package resolve
+
+COPY . .
+
+RUN swift test

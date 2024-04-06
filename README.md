@@ -36,7 +36,7 @@ await <-done
 ### This library vs equivalent [go code](/Benchmarks/golang/benchmark_test.go)
 ![Swift vs Go](media/swift-vs-go.png)
 
-It's not as fast as go - but it's still pretty fast!
+Obviously being as fast as go is a lofty goal that we may never reach, but it's still pretty fast!
 
 ### This Library vs [Apple's Async Algorithms channel implementation](https://github.com/apple/swift-async-algorithms/blob/main/Sources/AsyncAlgorithms/AsyncAlgorithms.docc/Guides/Channel.md)
 ![Swift vs Go](media/vs-async-alg.png)

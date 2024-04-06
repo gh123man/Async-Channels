@@ -8,13 +8,18 @@ on:
 
 jobs:
   build:
+    name: Swift ${{ matrix.swift }} on ${{ matrix.os }}
     strategy:
-        matrix:
-          os: [ubuntu-latest]
+      matrix:
+        os: [ubuntu-latest, macos-latest]
+        swift: ["5.9"]
     runs-on: ${{ matrix.os }}
     steps:
-    - uses: docker/build-push-action@v3
-      with:
-        push: false
-        tags: runtests
-        file: Dockerfile.tests
+      - uses: swift-actions/setup-swift@65540b95f51493d65f5e59e97dcef9629ddf11bf
+        with:
+          swift-version: ${{ matrix.swift }}
+      - uses: actions/checkout@v4
+      - name: Build
+        run: swift build
+      - name: Run tests
+        run: swift test

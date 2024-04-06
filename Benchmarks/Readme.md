@@ -69,8 +69,8 @@ Apple has their own channel implementation in the [swift-async-algorithms packag
 
 | Test Case  | This Library | Async Algorithms `AsyncChannel` | This library `n` times faster   |
 | --------------------------- | ----------- | ----------- | ----- |
-| testSingleReaderManyWriter  | `0.702384305` | `5.884461689` | `8.38x`  |
-| testHighConcurrency         | `0.7504368067` | `8.240125799` | `10.98x`  |
+| testSingleReaderManyWriter  | `0.7498844027519226` | `5.4360926985740665` | `7.95x`  |
+| testHighConcurrency         | `0.7715810060501098` | `7.373045003414154` | `10.25x`  |
 
 ### Why is swift slower than go?
 

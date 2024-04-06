@@ -41,7 +41,9 @@ Obviously being as fast as go is a lofty goal that we may never reach, but it's 
 ### This Library vs [Apple's Async Algorithms channel implementation](https://github.com/apple/swift-async-algorithms/blob/main/Sources/AsyncAlgorithms/AsyncAlgorithms.docc/Guides/Channel.md)
 ![Swift vs Go](media/vs-async-alg.png)
 
-For more detailed results see the [Benchmarks](/Benchmarks/) readme.
+*The above results were sampled from the `Int` tests in the detailed benchmark results*
+
+For more detailed results (on a variety of data types) see the [Benchmarks](/Benchmarks/) readme.
 
 ## Usage
 

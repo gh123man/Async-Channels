@@ -4,8 +4,7 @@ import CoreFoundation
 import AsyncAlgorithms
 
 
-let iterations = 3
-
+let iterations = 1
 
 protocol Initializable {
     init()
@@ -44,10 +43,10 @@ print()
 print("Test | Type | Execution Time(ms)")
 print("-----|------|---------------")
 
-//await run(Int.self)
-//await run(String.self)
-//await run(ValueData.self)
-//await run(RefData.self)
+await run(Int.self)
+await run(String.self)
+await run(ValueData.self)
+await run(RefData.self)
 
 await runAsyncAlg(Int.self)
 await runAsyncAlg(String.self)
@@ -66,6 +65,7 @@ func run<T: Initializable>(_ type: T.Type) async {
     formatResult(await testMPSCBuffered(type))
     formatResult(await testSPMCBuffered(type))
     formatResult(await testMPMCBuffered(type))
+    formatResult(await testMPSCWriteContentionBuffered(type))
     
     formatResult(await testSyncRw(type))
     formatResult(await testMultiSelect(type))
@@ -181,34 +181,29 @@ func testAsyncAlgMPSCWriteContention<T: Initializable>(_ type: T.Type, producers
 func runMPMC<T: Initializable>(_ type: T.Type, producers: Int, consumers: Int, writes: Int, buffer: Int = 0) async -> Double {
     return await timeIt(iterations: iterations) {
         let a = Channel<T>(capacity: buffer)
-        let wg = Channel<Int>(capacity: producers + consumers)
+        let writeWg = WaitGroup(count: producers)
+        let readWg = WaitGroup(count: consumers)
         
         for _ in 0..<producers {
             Task {
                 for _ in (0 ..< writes / producers) {
                     await a <- T()
                 }
-                await wg <- 1
+                await writeWg.done()
             }
         }
         
         for _ in 0..<consumers {
             Task {
                 for await _ in a {}
-                await wg <- 1
+                await readWg.done()
             }
         }
         
-        var sum = 0
-        while sum < producers {
-            sum += (await <-wg)!
-        }
-        
+        await writeWg.wait()
         a.close()
+        await readWg.wait()
         
-        while sum < consumers + producers {
-            sum += (await <-wg)!
-        }
     }
 }
 
@@ -276,34 +271,28 @@ func testMultiSelect<T: Initializable>(_ type: T.Type) async -> (String, String,
 func runMPMCAsyncAlg<T: Initializable>(_ type: T.Type, producers: Int, consumers: Int, writes: Int, buffer: Int = 0) async -> Double {
     return await timeIt(iterations: iterations) {
         let a = AsyncChannel<T>()
-        let wg = Channel<Int>(capacity: producers + consumers)
+        let writeWg = WaitGroup(count: producers)
+        let readWg = WaitGroup(count: consumers)
         
         for _ in 0..<producers {
             Task {
                 for _ in (0 ..< writes / producers) {
                     await a.send(T())
                 }
-                await wg <- 1
+                await writeWg.done()
             }
         }
         
         for _ in 0..<consumers {
             Task {
                 for await _ in a {}
-                await wg <- 1
+                await readWg.done()
             }
         }
         
-        var sum = 0
-        while sum < producers {
-            sum += (await <-wg)!
-        }
-        
+        await writeWg.wait()
         a.finish()
-        
-        while sum < consumers + producers {
-            sum += (await <-wg)!
-        }
+        await readWg.wait()
     }
 }
 

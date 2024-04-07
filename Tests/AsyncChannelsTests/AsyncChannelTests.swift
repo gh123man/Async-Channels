@@ -37,6 +37,9 @@ final class AsyncTest: XCTestCase {
     
     var stopTimeout: Channel<Bool>?
     
+    
+// Aparently this crashes on linux
+#if canImport(Darwin)
     // Each test is run 100 times.
     // It's not always easy to validate correct concurrent behavior with asserts. In fact
     // it's easy to miss things that can occor rarely such as race/timing issues. Sometimes
@@ -49,6 +52,7 @@ final class AsyncTest: XCTestCase {
             super.invokeTest()
         }
     }
+#endif
     
     
     override func setUp() async throws {

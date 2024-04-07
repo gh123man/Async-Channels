@@ -4,7 +4,7 @@ import CoreFoundation
 import AsyncAlgorithms
 
 
-let iterations = 1
+let iterations = 10
 
 protocol Initializable {
     init()
@@ -96,7 +96,7 @@ func formatResult(_ result: (String, String, Double)) {
     print("\(name) | `\(type)` | `\(Int(val * 1000))`")
 }
 
-// MARK: Basic tests
+// MARK: Unbuffered tests
 
 func testSPSC<T: Initializable>(_ type: T.Type, writes: Int = 1_000_000) async -> (String, String, Double) {
     let result = await runMPMC(type, producers: 1, consumers: 1, writes: writes)
@@ -123,7 +123,7 @@ func testMPSCWriteContention<T: Initializable>(_ type: T.Type, producers: Int = 
     return ("MPSC Write Contention", "\(T.self)", result)
 }
 
-// MARK: Basic tests buffered
+// MARK: Buffered tests
 
 func testSPSCBuffered<T: Initializable>(_ type: T.Type, writes: Int = 1_000_000, buffer: Int = 100) async -> (String, String, Double) {
     let result = await runMPMC(type, producers: 1, consumers: 1, writes: writes, buffer: buffer)
@@ -186,7 +186,7 @@ func runMPMC<T: Initializable>(_ type: T.Type, producers: Int, consumers: Int, w
         
         for _ in 0..<producers {
             Task {
-                for _ in (0 ..< writes / producers) {
+                for _ in 0 ..< writes / producers {
                     await a <- T()
                 }
                 await writeWg.done()
@@ -211,7 +211,7 @@ func testSyncRw<T: Initializable>(_ type: T.Type, writes: Int = 5_000_000) async
     let result = await timeIt(iterations: iterations) {
         let a = Channel<T>(capacity: 1)
         
-        for _ in (0..<writes) {
+        for _ in 0..<writes {
             await a <- T()
             await <-a
         }
@@ -242,24 +242,12 @@ func testMultiSelect<T: Initializable>(_ type: T.Type) async -> (String, String,
         
         while sum < 6 * 100_000 {
             await select {
-                rx(a) {
-                    sum += 1
-                }
-                rx(b) {
-                    sum += 1
-                }
-                rx(c) {
-                    sum += 1
-                }
-                rx(d) {
-                    sum += 1
-                }
-                rx(e) {
-                    sum += 1
-                }
-                rx(f) {
-                    sum += 1
-                }
+                rx(a) { sum += 1 }
+                rx(b) { sum += 1 }
+                rx(c) { sum += 1 }
+                rx(d) { sum += 1 }
+                rx(e) { sum += 1 }
+                rx(f) { sum += 1 }
             }
         }
     }
@@ -276,7 +264,7 @@ func runMPMCAsyncAlg<T: Initializable>(_ type: T.Type, producers: Int, consumers
         
         for _ in 0..<producers {
             Task {
-                for _ in (0 ..< writes / producers) {
+                for _ in 0 ..< writes / producers {
                     await a.send(T())
                 }
                 await writeWg.done()

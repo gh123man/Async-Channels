@@ -1,63 +1,67 @@
 package main
 
 import (
+	"sync"
 	"testing"
 )
 
-func BenchmarkSingleReaderManyWriter(b *testing.B) {
+func BenchmarkSPSC(b *testing.B) {
 	for i := 0; i < b.N; i++ {
-		a := make(chan int)
-		var sum = 0
-
-		for j := 0; j < 100; j++ {
-			go func() {
-				for k := 0; k < 10000; j++ {
-					a <- 1
-				}
-			}()
-		}
-
-		for sum < 1_000_000 {
-			sum += <-a
-		}
+		benchmarkMPMC(1, 1, 1_000_000, 0)
 	}
 }
 
-func BenchmarkHighConcurrency(b *testing.B) {
+func BenchmarkMPSC(b *testing.B) {
 	for i := 0; i < b.N; i++ {
-		a := make(chan int)
-		sum := 0
-
-		for j := 0; j < 1000; j++ {
-			go func() {
-				for k := 0; k < 1000; k++ {
-					a <- 1
-				}
-			}()
-		}
-
-		for sum < 1_000_000 {
-			sum += <-a
-		}
+		benchmarkMPMC(5, 1, 1_000_000, 0)
 	}
 }
 
-func BenchmarkHighConcurrencyBuffered(b *testing.B) {
+func BenchmarkSPMC(b *testing.B) {
 	for i := 0; i < b.N; i++ {
-		a := make(chan int, 20)
-		var sum = 0
+		benchmarkMPMC(1, 5, 1_000_000, 0)
+	}
+}
 
-		for j := 0; j < 1000; j++ {
-			go func() {
-				for k := 0; k < 1000; k++ {
-					a <- 1
-				}
-			}()
-		}
+func BenchmarkMPMC(b *testing.B) {
+	for i := 0; i < b.N; i++ {
+		benchmarkMPMC(1, 5, 1_000_000, 0)
+	}
+}
 
-		for sum < 1_000_000 {
-			sum += <-a
-		}
+func BenchmarkMPSCWriteContention(b *testing.B) {
+	for i := 0; i < b.N; i++ {
+		benchmarkMPMC(1000, 1, 1_000_000, 0)
+	}
+}
+
+func BenchmarkSPSCBuffered(b *testing.B) {
+	for i := 0; i < b.N; i++ {
+		benchmarkMPMC(1, 1, 1_000_000, 100)
+	}
+}
+
+func BenchmarkMPSCBuffered(b *testing.B) {
+	for i := 0; i < b.N; i++ {
+		benchmarkMPMC(5, 1, 1_000_000, 100)
+	}
+}
+
+func BenchmarkSPMCBuffered(b *testing.B) {
+	for i := 0; i < b.N; i++ {
+		benchmarkMPMC(1, 5, 1_000_000, 100)
+	}
+}
+
+func BenchmarkMPMCBuffered(b *testing.B) {
+	for i := 0; i < b.N; i++ {
+		benchmarkMPMC(1, 5, 1_000_000, 100)
+	}
+}
+
+func BenchmarkMPSCWriteContentionBuffered(b *testing.B) {
+	for i := 0; i < b.N; i++ {
+		benchmarkMPMC(1000, 1, 1_000_000, 100)
 	}
 }
 
@@ -72,7 +76,7 @@ func BenchmarkSyncRw(b *testing.B) {
 	}
 }
 
-func BenchmarkSelect(b *testing.B) {
+func BenchmarkMultiSelect(b *testing.B) {
 	for i := 0; i < b.N; i++ {
 		a := make(chan int)
 		bc := make(chan int)
@@ -107,4 +111,32 @@ func BenchmarkSelect(b *testing.B) {
 			}
 		}
 	}
+}
+
+func benchmarkMPMC(producers int, consumers int, writes int, buffer int) {
+	ch := make(chan int, buffer)
+	var writeGroup sync.WaitGroup
+	writeGroup.Add(producers)
+
+	var readGroup sync.WaitGroup
+	readGroup.Add(consumers)
+
+	for p := 0; p < producers; p++ {
+		go func() {
+			for i := 0; i < writes/producers; i++ {
+				ch <- i
+			}
+			writeGroup.Done()
+		}()
+	}
+	for c := 0; c < consumers; c++ {
+		go func() {
+			for range ch {
+			}
+			readGroup.Done()
+		}()
+	}
+	writeGroup.Wait()
+	close(ch)
+	readGroup.Wait()
 }

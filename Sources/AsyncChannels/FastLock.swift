@@ -3,23 +3,23 @@ import Foundation
 #if canImport(Darwin)
 struct FastLock {
     let unfairLock = {
-       let l = UnsafeMutablePointer<os_unfair_lock>.allocate(capacity: 1)
-       l.initialize(to: os_unfair_lock())
-       return l
+        let l = UnsafeMutablePointer<os_unfair_lock>.allocate(capacity: 1)
+        l.initialize(to: os_unfair_lock())
+        return l
     }()
    
 
-   @inlinable
-   @inline(__always)
-   func lock() {
-       os_unfair_lock_lock(unfairLock)
-   }
+    @inlinable
+    @inline(__always)
+    func lock() {
+        os_unfair_lock_lock(unfairLock)
+    }
    
-   @inlinable
-   @inline(__always)
-   func unlock() {
-       os_unfair_lock_unlock(unfairLock)
-   }
+    @inlinable
+    @inline(__always)
+    func unlock() {
+        os_unfair_lock_unlock(unfairLock)
+    }
 
 }
 

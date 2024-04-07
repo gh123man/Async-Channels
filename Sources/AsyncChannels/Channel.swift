@@ -50,7 +50,6 @@ public final class Channel<T: Sendable>: @unchecked Sendable {
         return closed
     }
     
-    @usableFromInline
     func receiveOrListen(_ sema: AsyncSemaphore) -> T? {
         mutex.lock()
         

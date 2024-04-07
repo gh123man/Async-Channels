@@ -180,7 +180,7 @@ for _ in (0..<20) {
 
 See the [Examples](/Examples/) folder for real world usage. 
 
-- [Parallel image converter](/Examples/ImageConverter/) - Saturate the CPU to convert images applying back pressrue to the input. 
+- [Parallel image converter](/Examples/ImageConverter/Sources/ImageConverter/main.swift) - Saturate the CPU to convert images applying back pressure to the input. 
 
 ## Notes
 

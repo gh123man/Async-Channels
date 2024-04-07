@@ -69,7 +69,7 @@ for i in 0..<ProcessInfo.processInfo.activeProcessorCount {
     }
 }
 
-// Recieve the converted images on one task and write to disk
+// Receive the converted images on one task and write to disk
 Task {
     try! FileManager.default.createDirectory(at: URL(fileURLWithPath: "\(directoryPath)/converted/"), withIntermediateDirectories: true, attributes: nil)
 

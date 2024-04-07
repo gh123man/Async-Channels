@@ -101,9 +101,6 @@ SPMC Async alg | `RefData` | `3929`
 MPMC Async alg | `RefData` | `4285`
 MPSC Async alg Write Contention | `RefData` | `20992`
 
-
-
-
 ## Async Channels vs Async Algorithms AsyncChannel
 
 Apple has their own channel implementation in the [swift-async-algorithms package](https://github.com/apple/swift-async-algorithms/blob/main/Sources/AsyncAlgorithms/AsyncAlgorithms.docc/Guides/Channel.md). We cannot compare every benchmark since it does not support buffering or select.

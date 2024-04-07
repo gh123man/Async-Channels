@@ -176,6 +176,12 @@ for _ in (0..<20) {
 }
 ```
 
+## Code Samples
+
+See the [Examples](/Examples/) folder for real world usage. 
+
+- [Parallel image converter](/Examples/ImageConverter/) Saturate the CPU to convert images applying back pressrue to the input. 
+
 ## Notes
 
 If you are looking for a blocking variant of this library for traditional swift concurrency, check out my previous project [Swigo](https://github.com/gh123man/Swigo) which this library is based off of. 

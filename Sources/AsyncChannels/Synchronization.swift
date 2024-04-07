@@ -1,11 +1,10 @@
 import Foundation
-import Collections
 
 @usableFromInline
 class AsyncSemaphore {
     private var permits: Int
     private var mutex = FastLock()
-    private var continuationQueue = Deque<UnsafeContinuation<Void, Never>>()
+    private var continuationQueue = LinkedList<UnsafeContinuation<Void, Never>>()
 
     @usableFromInline
     init(value: Int) {
@@ -21,7 +20,7 @@ class AsyncSemaphore {
                 self.mutex.unlock()
                 continuation.resume()
             } else {
-                self.continuationQueue.append(continuation)
+                self.continuationQueue.push(continuation)
                 self.mutex.unlock()
             }
         }
@@ -29,7 +28,7 @@ class AsyncSemaphore {
     
     func signal() {
         self.mutex.lock()
-        if let next = continuationQueue.popFirst() {
+        if let next = continuationQueue.pop() {
             self.mutex.unlock()
             next.resume()
         } else {

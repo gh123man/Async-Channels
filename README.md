@@ -33,7 +33,17 @@ await <-done
 
 ## Benchmarks
 
-See the [Benchmarks](/Benchmarks/) readme for results and comparing with go. 
+### This library vs equivalent [go code](/Benchmarks/golang/benchmark_test.go)
+![Swift vs Go](media/swift-vs-go.png)
+
+Obviously being as fast as go is a lofty goal that we may never reach, but it's still pretty fast!
+
+### This Library vs [Apple's Async Algorithms channel implementation](https://github.com/apple/swift-async-algorithms/blob/main/Sources/AsyncAlgorithms/AsyncAlgorithms.docc/Guides/Channel.md)
+![Swift vs Go](media/vs-async-alg.png)
+
+*The above results were sampled from the `Int` tests in the detailed benchmark results*
+
+For more detailed results (on a variety of data types) see the [Benchmarks](/Benchmarks/) readme.
 
 ## Usage
 
@@ -173,4 +183,6 @@ If you are looking for a blocking variant of this library for traditional swift 
 
 # Special Thanks
 
-I could not have gotten this far on my own without the help from the folks over at [forums.swift.org](https://forums.swift.org/t/async-channels-for-swift-concurrency/70752). Especially a big shout-out and thank you to [wadetregaskis](https://forums.swift.org/u/wadetregaskis/summary) for optimizing much of this code and finding the more challenging performance limitations. 
+I could not have gotten this far on my own without the help from the folks over at [forums.swift.org](https://forums.swift.org/t/async-channels-for-swift-concurrency/70752). Big shout-out and thank you to:
+- [wadetregaskis](https://forums.swift.org/u/wadetregaskis/summary) for optimizing much of this code and finding the more challenging performance limitations (compiler limitations, locking strategies)
+- [vns](https://forums.swift.org/u/vns/summary) for proposing a `LinkedList` backing data structure

@@ -6,23 +6,65 @@ import AsyncAlgorithms
 
 let iterations = 10
 
-await run()
-await runAsyncAlg()
 
-func run() async {
-    await testSingleReaderManyWriter()
-    await testHighConcurrency()
-    await testHighConcurrencyBuffered()
-    await testSyncRw()
-    await testSelect()
+protocol Initializable {
+    init()
 }
 
-func runAsyncAlg() async {
-    await testAsyncAlgSingleReaderManyWriter()
-    await testAsyncAlgSingleHighConcurrency()
+extension Int : Initializable {}
+extension String : Initializable {
+    init() {
+        self.init("My test string for benchmarking")
+    }
 }
 
-func timeIt(iterations: Int, block: () async -> ()) async {
+struct ValueData: Initializable {
+    let foo: String
+    let bar: Int
+    init() {
+        foo = "My test string for benchmarking"
+        bar = 1234
+    }
+}
+
+class RefData: Initializable {
+    let foo: String
+    let bar: Int
+    required init() {
+        foo = "My test string for benchmarking"
+        bar = 1234
+    }
+}
+
+// MARK: Run Tests
+
+print("Starting benchmarks with \(iterations) rounds")
+
+await run(Int.self)
+await run(String.self)
+await run(ValueData.self)
+await run(RefData.self)
+
+await runAsyncAlg(Int.self)
+await runAsyncAlg(String.self)
+await runAsyncAlg(ValueData.self)
+await runAsyncAlg(RefData.self)
+
+
+func run<T: Initializable>(_ type: T.Type) async {
+    print(await testSingleReaderManyWriter(type))
+    print(await testHighConcurrency(type))
+    print(await testHighConcurrencyBuffered(type))
+    print(await testSyncRw(type))
+    print(await testSelect(type))
+}
+
+func runAsyncAlg<T: Initializable>(_ type: T.Type) async {
+    print(await testAsyncAlgSingleReaderManyWriter(type))
+    print(await testAsyncAlgSingleHighConcurrency(type))
+}
+
+func timeIt(iterations: Int, block: () async -> ()) async -> Double {
     var sum: CFAbsoluteTime = 0
     for _ in 0..<iterations {
         let startTime = CFAbsoluteTimeGetCurrent()
@@ -30,98 +72,100 @@ func timeIt(iterations: Int, block: () async -> ()) async {
         let timeElapsed = CFAbsoluteTimeGetCurrent() - startTime
         sum += timeElapsed
     }
-    print("Time elapsed: \(sum / Double(iterations))")
+    return sum / Double(iterations)
     
 }
 
-func testSingleReaderManyWriter() async {
-    print(#function)
-    await timeIt(iterations: iterations) {
-        let a = Channel<Int>()
+func testSingleReaderManyWriter<T: Initializable>(_ type: T.Type) async -> (String, Double) {
+    let result = await timeIt(iterations: iterations) {
+        let a = Channel<T>()
         var sum = 0
         
         for _ in (0..<100) {
             Task {
                 for _ in (0..<10000) {
-                    await a <- 1
+                    await a <- T()
                 }
             }
         }
         
         while sum < 1_000_000 {
-            sum += (await <-a)!
+            await <-a
+            sum += 1
         }
     }
+    return ("\(#function) \(T.self)", result)
 }
 
-func testHighConcurrency() async {
-    print(#function)
-    await timeIt(iterations: iterations) {
-        let a = Channel<Int>()
+func testHighConcurrency<T: Initializable>(_ type: T.Type) async -> (String, Double) {
+    let result = await timeIt(iterations: iterations) {
+        let a = Channel<T>()
         var sum = 0
         
         for _ in (0..<1000) {
             Task {
                 for _ in (0..<1000) {
-                    await a <- 1
+                    await a <- T()
                 }
             }
         }
         
         while sum < 1_000_000 {
-            sum += (await <-a)!
+            await <-a
+            sum += 1
         }
     }
+    return ("\(#function) \(T.self)", result)
 }
 
-func testHighConcurrencyBuffered() async {
-    print(#function)
-    await timeIt(iterations: iterations) {
-        let a = Channel<Int>(capacity: 20)
+func testHighConcurrencyBuffered<T: Initializable>(_ type: T.Type) async -> (String, Double) {
+    let result = await timeIt(iterations: iterations) {
+        let a = Channel<T>(capacity: 20)
         var sum = 0
         
         for _ in (0..<1000) {
             Task {
                 for _ in (0..<1000) {
-                    await a <- 1
+                    await a <- T()
                 }
             }
         }
         
         while sum < 1_000_000 {
-            sum += (await <-a)!
+            await <-a
+            sum += 1
         }
     }
+    return ("\(#function) \(T.self)", result)
 }
 
-func testSyncRw() async {
-    print(#function)
-    await timeIt(iterations: iterations) {
-        let a = Channel<Int>(capacity: 1)
+func testSyncRw<T: Initializable>(_ type: T.Type) async -> (String, Double) {
+    let result = await timeIt(iterations: iterations) {
+        let a = Channel<T>(capacity: 1)
         
-        for i in (0..<5_000_000) {
-            await a <- i
+        for _ in (0..<5_000_000) {
+            await a <- T()
             await <-a
         }
     }
+    return ("\(#function) \(T.self)", result)
 }
 
 
 
-func testSelect() async {
-    print(#function)
-    await timeIt(iterations: iterations) {
-        let a = Channel<Int>()
-        let b = Channel<Int>()
-        let c = Channel<Int>()
-        let d = Channel<Int>()
-        let e = Channel<Int>()
-        let f = Channel<Int>()
+func testSelect<T: Initializable>(_ type: T.Type) async -> (String, Double) {
+    let result = await timeIt(iterations: iterations) {
+        let a = Channel<T>()
+        let b = Channel<T>()
+        let c = Channel<T>()
+        let d = Channel<T>()
+        let e = Channel<T>()
+        let f = Channel<T>()
         
         for chan in [a, b, c, d, e, f] {
             Task {
                 for _ in (0..<100_000) {
-                    await chan <- 1
+                    await chan <- T()
                 }
             }
         }
@@ -131,34 +175,34 @@ func testSelect() async {
         while sum < 6 * 100_000 {
             await select {
                 rx(a) {
-                    sum += $0!
+                    sum += 1
                 }
                 rx(b) {
-                    sum += $0!
+                    sum += 1
                 }
                 rx(c) {
-                    sum += $0!
+                    sum += 1
                 }
                 rx(d) {
-                    sum += $0!
+                    sum += 1
                 }
                 rx(e) {
-                    sum += $0!
+                    sum += 1
                 }
                 rx(f) {
-                    sum += $0!
+                    sum += 1
                 }
             }
         }
     }
+    return ("\(#function) \(T.self)", result)
 }
 
 
 // Compare to async algorithms channels
 
-func testAsyncAlgSingleReaderManyWriter() async {
-    print(#function)
-    await timeIt(iterations: iterations) {
+func testAsyncAlgSingleReaderManyWriter<T: Initializable>(_ type: T.Type) async -> (String, Double) {
+    let result = await timeIt(iterations: iterations) {
         let a = AsyncChannel<Int>()
         var sum = 0
         
@@ -177,11 +221,11 @@ func testAsyncAlgSingleReaderManyWriter() async {
             }
         }
     }
+    return ("\(#function) \(T.self)", result)
 }
 
-func testAsyncAlgSingleHighConcurrency() async {
-    print(#function)
-    await timeIt(iterations: iterations) {
+func testAsyncAlgSingleHighConcurrency<T: Initializable>(_ type: T.Type) async -> (String, Double) {
+    let result = await timeIt(iterations: iterations) {
         let a = AsyncChannel<Int>()
         var sum = 0
         
@@ -200,4 +244,5 @@ func testAsyncAlgSingleHighConcurrency() async {
             }
         }
     }
+    return ("\(#function) \(T.self)", result)
 }

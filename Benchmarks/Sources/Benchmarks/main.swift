@@ -4,7 +4,7 @@ import CoreFoundation
 import AsyncAlgorithms
 
 
-let iterations = 10
+let iterations = 3
 
 
 protocol Initializable {
@@ -38,12 +38,16 @@ class RefData: Initializable {
 
 // MARK: Run Tests
 
+print()
 print("Starting benchmarks with \(iterations) rounds")
+print()
+print("Test | Type | Execution Time(ms)")
+print("-----|------|---------------")
 
-await run(Int.self)
-await run(String.self)
-await run(ValueData.self)
-await run(RefData.self)
+//await run(Int.self)
+//await run(String.self)
+//await run(ValueData.self)
+//await run(RefData.self)
 
 await runAsyncAlg(Int.self)
 await runAsyncAlg(String.self)
@@ -52,16 +56,27 @@ await runAsyncAlg(RefData.self)
 
 
 func run<T: Initializable>(_ type: T.Type) async {
-    print(await testSingleReaderManyWriter(type))
-    print(await testHighConcurrency(type))
-    print(await testHighConcurrencyBuffered(type))
-    print(await testSyncRw(type))
-    print(await testSelect(type))
+    formatResult(await testSPSC(type))
+    formatResult(await testMPSC(type))
+    formatResult(await testSPMC(type))
+    formatResult(await testMPMC(type))
+    formatResult(await testMPSCWriteContention(type))
+
+    formatResult(await testSPSCBuffered(type))
+    formatResult(await testMPSCBuffered(type))
+    formatResult(await testSPMCBuffered(type))
+    formatResult(await testMPMCBuffered(type))
+    
+    formatResult(await testSyncRw(type))
+    formatResult(await testMultiSelect(type))
 }
 
 func runAsyncAlg<T: Initializable>(_ type: T.Type) async {
-    print(await testAsyncAlgSingleReaderManyWriter(type))
-    print(await testAsyncAlgSingleHighConcurrency(type))
+    formatResult(await testAsyncAlgSPSC(type))
+    formatResult(await testAsyncAlgMPSC(type))
+    formatResult(await testAsyncAlgSPMC(type))
+    formatResult(await testAsyncAlgMPMC(type))
+    formatResult(await testAsyncAlgMPSCWriteContention(type))
 }
 
 func timeIt(iterations: Int, block: () async -> ()) async -> Double {
@@ -76,84 +91,142 @@ func timeIt(iterations: Int, block: () async -> ()) async -> Double {
     
 }
 
-func testSingleReaderManyWriter<T: Initializable>(_ type: T.Type) async -> (String, Double) {
-    let result = await timeIt(iterations: iterations) {
-        let a = Channel<T>()
-        var sum = 0
+func formatResult(_ result: (String, String, Double)) {
+    let (name, type, val) = result
+    print("\(name) | `\(type)` | `\(Int(val * 1000))`")
+}
+
+// MARK: Basic tests
+
+func testSPSC<T: Initializable>(_ type: T.Type, writes: Int = 1_000_000) async -> (String, String, Double) {
+    let result = await runMPMC(type, producers: 1, consumers: 1, writes: writes)
+    return ("SPSC", "\(T.self)", result)
+}
+
+func testMPSC<T: Initializable>(_ type: T.Type, producers: Int = 5, writes: Int = 1_000_000) async -> (String, String, Double) {
+    let result = await runMPMC(type, producers: producers, consumers: 1, writes: writes)
+    return ("MPSC", "\(T.self)", result)
+}
+
+func testSPMC<T: Initializable>(_ type: T.Type, consumers: Int = 5, writes: Int = 1_000_000) async -> (String, String, Double) {
+    let result = await runMPMC(type, producers: 1, consumers: consumers, writes: writes)
+    return ("SPMC", "\(T.self)", result)
+}
+
+func testMPMC<T: Initializable>(_ type: T.Type, producers: Int = 5, consumers: Int = 5, writes: Int = 1_000_000, buffer: Int = 100) async -> (String, String, Double) {
+    let result = await runMPMC(type, producers: producers, consumers: consumers, writes: writes, buffer: buffer)
+    return ("MPMC", "\(T.self)", result)
+}
+
+func testMPSCWriteContention<T: Initializable>(_ type: T.Type, producers: Int = 1000, writes: Int = 1_000_000) async -> (String, String, Double) {
+    let result = await runMPMC(type, producers: producers, consumers: 1, writes: writes)
+    return ("MPSC Write Contention", "\(T.self)", result)
+}
+
+// MARK: Basic tests buffered
+
+func testSPSCBuffered<T: Initializable>(_ type: T.Type, writes: Int = 1_000_000, buffer: Int = 100) async -> (String, String, Double) {
+    let result = await runMPMC(type, producers: 1, consumers: 1, writes: writes, buffer: buffer)
+    return ("SPSC Buffered(\(buffer))", "\(T.self)", result)
+}
+
+func testMPSCBuffered<T: Initializable>(_ type: T.Type, producers: Int = 5, writes: Int = 1_000_000, buffer: Int = 100) async -> (String, String, Double) {
+    let result = await runMPMC(type, producers: producers, consumers: 1, writes: writes, buffer: buffer)
+    return ("MPSC Buffered(\(buffer))", "\(T.self)", result)
+}
+
+func testSPMCBuffered<T: Initializable>(_ type: T.Type, consumers: Int = 5, writes: Int = 1_000_000, buffer: Int = 100) async -> (String, String, Double) {
+    let result = await runMPMC(type, producers: 1, consumers: consumers, writes: writes, buffer: buffer)
+    return ("SPMC Buffered(\(buffer))", "\(T.self)", result)
+}
+
+func testMPMCBuffered<T: Initializable>(_ type: T.Type, producers: Int = 5, consumers: Int = 5, writes: Int = 1_000_000, buffer: Int = 100) async -> (String, String, Double) {
+    let result = await runMPMC(type, producers: producers, consumers: consumers, writes: writes, buffer: buffer)
+    return ("MPMC Buffered(\(buffer))", "\(T.self)", result)
+}
+
+func testMPSCWriteContentionBuffered<T: Initializable>(_ type: T.Type, producers: Int = 1000, writes: Int = 1_000_000, buffer: Int = 100) async -> (String, String, Double) {
+    let result = await runMPMC(type, producers: producers, consumers: 1, writes: writes, buffer: buffer)
+    return ("MPSC Write Contention Buffered(\(buffer))", "\(T.self)", result)
+}
+
+// MARK: Async alg comparison tests
+
+func testAsyncAlgSPSC<T: Initializable>(_ type: T.Type, writes: Int = 1_000_000) async -> (String, String, Double) {
+    let result = await runMPMCAsyncAlg(type, producers: 1, consumers: 1, writes: writes)
+    return ("SPSC Async alg", "\(T.self)", result)
+}
+
+func testAsyncAlgMPSC<T: Initializable>(_ type: T.Type, producers: Int = 5, writes: Int = 1_000_000) async -> (String, String, Double) {
+    let result = await runMPMCAsyncAlg(type, producers: producers, consumers: 1, writes: writes)
+    return ("MPSC Async alg", "\(T.self)", result)
+}
+
+func testAsyncAlgSPMC<T: Initializable>(_ type: T.Type, consumers: Int = 5, writes: Int = 1_000_000) async -> (String, String, Double) {
+    let result = await runMPMCAsyncAlg(type, producers: 1, consumers: consumers, writes: writes)
+    return ("SPMC Async alg", "\(T.self)", result)
+}
+
+func testAsyncAlgMPMC<T: Initializable>(_ type: T.Type, producers: Int = 5, consumers: Int = 5, writes: Int = 1_000_000, buffer: Int = 100) async -> (String, String, Double) {
+    let result = await runMPMCAsyncAlg(type, producers: producers, consumers: consumers, writes: writes, buffer: buffer)
+    return ("MPMC Async alg", "\(T.self)", result)
+}
+
+func testAsyncAlgMPSCWriteContention<T: Initializable>(_ type: T.Type, producers: Int = 1000, writes: Int = 1_000_000) async -> (String, String, Double) {
+    let result = await runMPMCAsyncAlg(type, producers: producers, consumers: 1, writes: writes)
+    return ("MPSC Async alg Write Contention", "\(T.self)", result)
+}
+
+
+func runMPMC<T: Initializable>(_ type: T.Type, producers: Int, consumers: Int, writes: Int, buffer: Int = 0) async -> Double {
+    return await timeIt(iterations: iterations) {
+        let a = Channel<T>(capacity: buffer)
+        let wg = Channel<Int>(capacity: producers + consumers)
         
-        for _ in (0..<100) {
+        for _ in 0..<producers {
             Task {
-                for _ in (0..<10000) {
+                for _ in (0 ..< writes / producers) {
                     await a <- T()
                 }
+                await wg <- 1
             }
         }
         
-        while sum < 1_000_000 {
-            await <-a
-            sum += 1
-        }
-    }
-    return ("\(#function) \(T.self)", result)
-}
-
-func testHighConcurrency<T: Initializable>(_ type: T.Type) async -> (String, Double) {
-    let result = await timeIt(iterations: iterations) {
-        let a = Channel<T>()
-        var sum = 0
-        
-        for _ in (0..<1000) {
+        for _ in 0..<consumers {
             Task {
-                for _ in (0..<1000) {
-                    await a <- T()
-                }
+                for await _ in a {}
+                await wg <- 1
             }
         }
         
-        while sum < 1_000_000 {
-            await <-a
-            sum += 1
-        }
-    }
-    return ("\(#function) \(T.self)", result)
-}
-
-func testHighConcurrencyBuffered<T: Initializable>(_ type: T.Type) async -> (String, Double) {
-    let result = await timeIt(iterations: iterations) {
-        let a = Channel<T>(capacity: 20)
         var sum = 0
-        
-        for _ in (0..<1000) {
-            Task {
-                for _ in (0..<1000) {
-                    await a <- T()
-                }
-            }
+        while sum < producers {
+            sum += (await <-wg)!
         }
         
-        while sum < 1_000_000 {
-            await <-a
-            sum += 1
+        a.close()
+        
+        while sum < consumers + producers {
+            sum += (await <-wg)!
         }
     }
-    return ("\(#function) \(T.self)", result)
 }
 
-func testSyncRw<T: Initializable>(_ type: T.Type) async -> (String, Double) {
+func testSyncRw<T: Initializable>(_ type: T.Type, writes: Int = 5_000_000) async -> (String, String, Double) {
     let result = await timeIt(iterations: iterations) {
         let a = Channel<T>(capacity: 1)
         
-        for _ in (0..<5_000_000) {
+        for _ in (0..<writes) {
             await a <- T()
             await <-a
         }
     }
-    return ("\(#function) \(T.self)", result)
+    return ("SyncRW", "\(T.self)", result)
 }
 
 
 
-func testSelect<T: Initializable>(_ type: T.Type) async -> (String, Double) {
+func testMultiSelect<T: Initializable>(_ type: T.Type) async -> (String, String, Double) {
     let result = await timeIt(iterations: iterations) {
         let a = Channel<T>()
         let b = Channel<T>()
@@ -195,54 +268,42 @@ func testSelect<T: Initializable>(_ type: T.Type) async -> (String, Double) {
             }
         }
     }
-    return ("\(#function) \(T.self)", result)
+    return ("Channel multi-select", "\(T.self)", result)
 }
 
 
-// Compare to async algorithms channels
 
-func testAsyncAlgSingleReaderManyWriter<T: Initializable>(_ type: T.Type) async -> (String, Double) {
-    let result = await timeIt(iterations: iterations) {
-        let a = AsyncChannel<Int>()
-        var sum = 0
+func runMPMCAsyncAlg<T: Initializable>(_ type: T.Type, producers: Int, consumers: Int, writes: Int, buffer: Int = 0) async -> Double {
+    return await timeIt(iterations: iterations) {
+        let a = AsyncChannel<T>()
+        let wg = Channel<Int>(capacity: producers + consumers)
         
-        for _ in (0..<100) {
+        for _ in 0..<producers {
             Task {
-                for _ in (0..<10000) {
-                    await a.send(1)
+                for _ in (0 ..< writes / producers) {
+                    await a.send(T())
                 }
+                await wg <- 1
             }
         }
         
-        for await n in a {
-            sum += n
-            if sum >= 1_000_000 {
-                a.finish()
+        for _ in 0..<consumers {
+            Task {
+                for await _ in a {}
+                await wg <- 1
             }
+        }
+        
+        var sum = 0
+        while sum < producers {
+            sum += (await <-wg)!
+        }
+        
+        a.finish()
+        
+        while sum < consumers + producers {
+            sum += (await <-wg)!
         }
     }
-    return ("\(#function) \(T.self)", result)
 }
 
-func testAsyncAlgSingleHighConcurrency<T: Initializable>(_ type: T.Type) async -> (String, Double) {
-    let result = await timeIt(iterations: iterations) {
-        let a = AsyncChannel<Int>()
-        var sum = 0
-        
-        for _ in (0..<1000) {
-            Task {
-                for _ in (0..<1000) {
-                    await a.send(1)
-                }
-            }
-        }
-        
-        for await n in a {
-            sum += n
-            if sum >= 1_000_000 {
-                a.finish()
-            }
-        }
-    }
-    return ("\(#function) \(T.self)", result)
-}

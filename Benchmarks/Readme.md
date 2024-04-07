@@ -10,59 +10,104 @@ All tests performed on an M1 max
 
 ## Swift vs Go
 
-(Integer input only)
-
-| Test Case  | Go (seconds) | Swift (seconds) | Swift `n` times slower than go  |
-| --------------------------- | ----------- | ----------- | ----- |
-| testSingleReaderManyWriter  | `0.318661688` | `0.702384305` | `2.15x`  |
-| testHighConcurrency         | `0.328830854` | `0.7504368067` | `2.19x`  |
-| testHighConcurrencyBuffered | `0.362022931` | `1.144838405` | `3.05x`  |
-| testSyncRw                  | `0.132789557` | `1.547898102` | `11.36x` |
-| testSelect                  | `0.306248166` | `1.401787996` | `5.05x`  |
-
 ### Raw results 
+
+First are the baseline go tests.
+
+```
+goos: darwin
+goarch: arm64
+pkg: benchmarks
+BenchmarkSPSC-10                           	       7	 158625381 ns/op	     274 B/op	       3 allocs/op
+BenchmarkMPSC-10                           	       4	 262326958 ns/op	    1160 B/op	       6 allocs/op
+BenchmarkSPMC-10                           	       4	 273297438 ns/op	     992 B/op	       7 allocs/op
+BenchmarkMPMC-10                           	       4	 276237417 ns/op	    1080 B/op	       5 allocs/op
+BenchmarkMPSCWriteContention-10            	       4	 319210156 ns/op	   19288 B/op	     136 allocs/op
+BenchmarkSPSCBuffered-10                   	      15	  72298667 ns/op	     928 B/op	       3 allocs/op
+BenchmarkMPSCBuffered-10                   	      13	  90277561 ns/op	     928 B/op	       3 allocs/op
+BenchmarkSPMCBuffered-10                   	      13	  90140349 ns/op	     928 B/op	       3 allocs/op
+BenchmarkMPMCBuffered-10                   	      12	  90550181 ns/op	     928 B/op	       3 allocs/op
+BenchmarkMPSCWriteContentionBuffered-10    	       4	 321178198 ns/op	   13696 B/op	     136 allocs/op
+BenchmarkSyncRw-10                         	       8	 131667010 ns/op	     112 B/op	       1 allocs/op
+BenchmarkMultiSelect-10                    	       4	 310069656 ns/op	     576 B/op	       6 allocs/op
+```
 
 The below results are from running the whole benchmark suit which covers multiple data types. 
 
-| Test case                             | Data type   | Result (seconds) |
-|---------------------------------------|-------------|------------------|
-| testSingleReaderManyWriter            | `Int`       | `0.684`          |
-| testHighConcurrency                   | `Int`       | `0.719`          |
-| testHighConcurrencyBuffered           | `Int`       | `1.104`          |
-| testSyncRw                            | `Int`       | `1.508`          |
-| testSelect                            | `Int`       | `1.545`          |
-| testSingleReaderManyWriter            | `String`    | `0.811`          |
-| testHighConcurrency                   | `String`    | `0.838`          |
-| testHighConcurrencyBuffered           | `String`    | `1.137`          |
-| testSyncRw                            | `String`    | `1.706`          |
-| testSelect                            | `String`    | `1.562`          |
-| testSingleReaderManyWriter            | `ValueData` | `0.750`          |
-| testHighConcurrency                   | `ValueData` | `0.772`          |
-| testHighConcurrencyBuffered           | `ValueData` | `1.159`          |
-| testSyncRw                            | `ValueData` | `1.518`          |
-| testSelect                            | `ValueData` | `1.560`          |
-| testSingleReaderManyWriter            | `RefData`   | `0.871`          |
-| testHighConcurrency                   | `RefData`   | `0.926`          |
-| testHighConcurrencyBuffered           | `RefData`   | `1.187`          |
-| testSyncRw                            | `RefData`   | `1.681`          |
-| testSelect                            | `RefData`   | `1.543`          |
-| testAsyncAlgSingleReaderManyWriter    | `Int`       | `5.436`          |
-| testAsyncAlgSingleHighConcurrency     | `Int`       | `7.373`          |
-| testAsyncAlgSingleReaderManyWriter    | `String`    | `5.395`          |
-| testAsyncAlgSingleHighConcurrency     | `String`    | `7.340`          |
-| testAsyncAlgSingleReaderManyWriter    | `ValueData` | `5.393`          |
-| testAsyncAlgSingleHighConcurrency     | `ValueData` | `7.334`          |
-| testAsyncAlgSingleReaderManyWriter    | `RefData`   | `5.392`          |
-| testAsyncAlgSingleHighConcurrency     | `RefData`   | `7.328`          |
+Test | Type | Execution Time(ms)
+-----|------|---------------
+SPSC | `Int` | `1117`
+MPSC | `Int` | `737`
+SPMC | `Int` | `881`
+MPMC | `Int` | `959`
+MPSC Write Contention | `Int` | `723`
+SPSC Buffered(100) | `Int` | `513`
+MPSC Buffered(100) | `Int` | `637`
+SPMC Buffered(100) | `Int` | `646`
+MPMC Buffered(100) | `Int` | `956`
+SyncRW | `Int` | `1531`
+Channel multi-select | `Int` | `1547`
+SPSC | `String` | `1292`
+MPSC | `String` | `850`
+SPMC | `String` | `923`
+MPMC | `String` | `1004`
+MPSC Write Contention | `String` | `848`
+SPSC Buffered(100) | `String` | `760`
+MPSC Buffered(100) | `String` | `698`
+SPMC Buffered(100) | `String` | `709`
+MPMC Buffered(100) | `String` | `1011`
+SyncRW | `String` | `1707`
+Channel multi-select | `String` | `1590`
+SPSC | `ValueData` | `1210`
+MPSC | `ValueData` | `790`
+SPMC | `ValueData` | `902`
+MPMC | `ValueData` | `975`
+MPSC Write Contention | `ValueData` | `785`
+SPSC Buffered(100) | `ValueData` | `497`
+MPSC Buffered(100) | `ValueData` | `658`
+SPMC Buffered(100) | `ValueData` | `659`
+MPMC Buffered(100) | `ValueData` | `978`
+SyncRW | `ValueData` | `1526`
+Channel multi-select | `ValueData` | `1567`
+SPSC | `RefData` | `1320`
+MPSC | `RefData` | `934`
+SPMC | `RefData` | `986`
+MPMC | `RefData` | `1261`
+MPSC Write Contention | `RefData` | `1492`
+SPSC Buffered(100) | `RefData` | `698`
+MPSC Buffered(100) | `RefData` | `774`
+SPMC Buffered(100) | `RefData` | `807`
+MPMC Buffered(100) | `RefData` | `1224`
+SyncRW | `RefData` | `1725`
+Channel multi-select | `RefData` | `1567`
+SPSC Async alg | `Int` | `3000`
+MPSC Async alg | `Int` | `4030`
+SPMC Async alg | `Int` | `3951`
+MPMC Async alg | `Int` | `4231`
+MPSC Async alg Write Contention | `Int` | `7343`
+SPSC Async alg | `String` | `3021`
+MPSC Async alg | `String` | `4083`
+SPMC Async alg | `String` | `3937`
+MPMC Async alg | `String` | `4313`
+MPSC Async alg Write Contention | `String` | `21004`
+SPSC Async alg | `ValueData` | `3006`
+MPSC Async alg | `ValueData` | `4052`
+SPMC Async alg | `ValueData` | `3911`
+MPMC Async alg | `ValueData` | `4275`
+MPSC Async alg Write Contention | `ValueData` | `19684`
+SPSC Async alg | `RefData` | `3026`
+MPSC Async alg | `RefData` | `4064`
+SPMC Async alg | `RefData` | `3929`
+MPMC Async alg | `RefData` | `4285`
+MPSC Async alg Write Contention | `RefData` | `20992`
+
+
+
 
 ## Async Channels vs Async Algorithms AsyncChannel
 
-Apple has their own channel implementation in the [swift-async-algorithms package](https://github.com/apple/swift-async-algorithms/blob/main/Sources/AsyncAlgorithms/AsyncAlgorithms.docc/Guides/Channel.md). We cannot compare every benchmark since it does not support buffering or select. 
+Apple has their own channel implementation in the [swift-async-algorithms package](https://github.com/apple/swift-async-algorithms/blob/main/Sources/AsyncAlgorithms/AsyncAlgorithms.docc/Guides/Channel.md). We cannot compare every benchmark since it does not support buffering or select.
 
-| Test Case  | This Library | Async Algorithms `AsyncChannel` | This library `n` times faster   |
-| --------------------------- | ----------- | ----------- | ----- |
-| testSingleReaderManyWriter  | `0.7498844027519226` | `5.4360926985740665` | `7.95x`  |
-| testHighConcurrency         | `0.7715810060501098` | `7.373045003414154` | `10.25x`  |
 
 ### Why is swift slower than go?
 

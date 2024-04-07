@@ -37,6 +37,20 @@ final class AsyncTest: XCTestCase {
     
     var stopTimeout: Channel<Bool>?
     
+    // Each test is run 100 times.
+    // It's not always easy to validate correct concurrent behavior with asserts. In fact
+    // it's easy to miss things that can occor rarely such as race/timing issues. Sometimes
+    // when these bugs happen you will get a deadlock or a panic. By running the tests lots
+    // of times, we get better validation that these issues do not exist. It also helps
+    // catch incorrectly written tests that have race conditions in the way that they are
+    // written.
+    override func invokeTest() {
+        for _ in 0..<100 {
+            super.invokeTest()
+        }
+    }
+    
+    
     override func setUp() async throws {
         try await super.setUp()
         stopTimeout = failAfter(duration: .seconds(5))
@@ -207,14 +221,17 @@ final class AsyncTest: XCTestCase {
     }
     
     func testSelectDefault() async {
-
         let c = Channel<String>(capacity: 3)
         let d = Channel<String>(capacity: 3)
         let validate = Channel<Bool>()
+        let resume = Channel<Bool>()
 
         Task {
-           await c <- "foo"
+            await c <- "foo"
+            await resume <- true
         }
+        
+        await <-resume
 
         var cCall = 0
 
@@ -265,7 +282,7 @@ final class AsyncTest: XCTestCase {
         let b = Channel<Int>()
         let c = Channel<Int>()
         let done1 = Channel<Bool>()
-        let total = 10000
+        let total = 1000
 
         Task {
             for _ in (0...total) {
@@ -417,9 +434,7 @@ final class AsyncTest: XCTestCase {
         let a = Channel<Bool>()
 
         Task {
-            while true {
-                await <-a
-            }
+            for await _ in a { }
         }
         a.close()
     }
@@ -441,8 +456,6 @@ final class AsyncTest: XCTestCase {
         Task {
             await c <- SomeData(name: "foo", age: 21)
         }
-        
-        print((await <-c)!.name)
         
         let b = Channel<SomeData>(capacity: 10)
         

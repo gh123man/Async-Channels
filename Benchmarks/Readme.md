@@ -21,12 +21,12 @@ pkg: benchmarks
 BenchmarkSPSC-10                           	       7	 158625381 ns/op	     274 B/op	       3 allocs/op
 BenchmarkMPSC-10                           	       4	 262326958 ns/op	    1160 B/op	       6 allocs/op
 BenchmarkSPMC-10                           	       4	 273297438 ns/op	     992 B/op	       7 allocs/op
-BenchmarkMPMC-10                           	       4	 276237417 ns/op	    1080 B/op	       5 allocs/op
+BenchmarkMPMC-10                           	       4	 288092292 ns/op	    1080 B/op	       5 allocs/op
 BenchmarkMPSCWriteContention-10            	       4	 319210156 ns/op	   19288 B/op	     136 allocs/op
 BenchmarkSPSCBuffered-10                   	      15	  72298667 ns/op	     928 B/op	       3 allocs/op
 BenchmarkMPSCBuffered-10                   	      13	  90277561 ns/op	     928 B/op	       3 allocs/op
 BenchmarkSPMCBuffered-10                   	      13	  90140349 ns/op	     928 B/op	       3 allocs/op
-BenchmarkMPMCBuffered-10                   	      12	  90550181 ns/op	     928 B/op	       3 allocs/op
+BenchmarkMPMCBuffered-10                   	      12	  92401344 ns/op	     928 B/op	       3 allocs/op
 BenchmarkMPSCWriteContentionBuffered-10    	       4	 321178198 ns/op	   13696 B/op	     136 allocs/op
 BenchmarkSyncRw-10                         	       8	 131667010 ns/op	     112 B/op	       1 allocs/op
 BenchmarkMultiSelect-10                    	       4	 310069656 ns/op	     576 B/op	       6 allocs/op

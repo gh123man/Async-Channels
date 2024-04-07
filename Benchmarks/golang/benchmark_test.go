@@ -25,7 +25,7 @@ func BenchmarkSPMC(b *testing.B) {
 
 func BenchmarkMPMC(b *testing.B) {
 	for i := 0; i < b.N; i++ {
-		benchmarkMPMC(1, 5, 1_000_000, 0)
+		benchmarkMPMC(5, 5, 1_000_000, 0)
 	}
 }
 
@@ -55,7 +55,7 @@ func BenchmarkSPMCBuffered(b *testing.B) {
 
 func BenchmarkMPMCBuffered(b *testing.B) {
 	for i := 0; i < b.N; i++ {
-		benchmarkMPMC(1, 5, 1_000_000, 100)
+		benchmarkMPMC(5, 5, 1_000_000, 100)
 	}
 }
 

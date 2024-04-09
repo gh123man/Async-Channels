@@ -168,6 +168,8 @@ public final class Channel<T: Sendable>: @unchecked Sendable {
         mutex.lock()
         defer { mutex.unlock() }
         closed = true
+        selectWaiter?.signal()
+        
         
         while let recvW = recvQueue.pop() {
             recvW.resume(returning: nil)

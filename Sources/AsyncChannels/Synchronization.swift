@@ -1,14 +1,12 @@
 import Foundation
 
 @usableFromInline
-actor AsyncSemaphore {
+actor SelectSignal {
     private var signaled = false
     private var continuation: UnsafeContinuation<Void, Never>?
 
     @usableFromInline
-    init(value: Int) {
-//        self.permits = value
-    }
+    init() {}
 
     @usableFromInline
     func wait() async {
@@ -20,7 +18,7 @@ actor AsyncSemaphore {
         }
     }
     
-    private func signalInternal() {
+    private func _signal() {
         signaled = true
         continuation?.resume()
         continuation = nil
@@ -28,7 +26,7 @@ actor AsyncSemaphore {
     
     nonisolated func signal() {
         Task {
-            await signalInternal()
+            await _signal()
         }
         
     }

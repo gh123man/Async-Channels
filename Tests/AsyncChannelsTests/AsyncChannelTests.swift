@@ -227,7 +227,7 @@ final class AsyncTest: XCTestCase {
     func testSelectDefault() async {
         let c = Channel<String>(capacity: 3)
         let d = Channel<String>(capacity: 3)
-        let validate = Channel<Bool>()
+        let validate = Channel<Bool>(capacity: 1)
         let resume = Channel<Bool>()
 
         Task {
@@ -253,8 +253,8 @@ final class AsyncTest: XCTestCase {
             }
         }
 
-        Task { await drain() }
-        Task { await drain() }
+        await drain()
+        await drain()
 
         await assertChanRx(validate, true)
         XCTAssertEqual(cCall, 1)

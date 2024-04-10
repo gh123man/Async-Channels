@@ -84,6 +84,14 @@ MPMC Buffered(100) | `RefData` | `1220`
 MPSC Write Contention Buffered(100) | `RefData` | `1221`
 SyncRW | `RefData` | `1685`
 Channel multi-select | `RefData` | `1198`
+
+
+## Async Channels vs Async Algorithms AsyncChannel
+
+Apple has their own channel implementation in the [swift-async-algorithms package](https://github.com/apple/swift-async-algorithms/blob/main/Sources/AsyncAlgorithms/AsyncAlgorithms.docc/Guides/Channel.md). We cannot compare every benchmark since it does not support buffering or select. Below are the results from comparable tests on the same data types as above. 
+
+Test | Type | Execution Time(ms)
+-----|------|---------------
 SPSC Async alg | `Int` | `3000`
 MPSC Async alg | `Int` | `4030`
 SPMC Async alg | `Int` | `3951`
@@ -105,12 +113,10 @@ SPMC Async alg | `RefData` | `3929`
 MPMC Async alg | `RefData` | `4285`
 MPSC Async alg Write Contention | `RefData` | `20992`
 
-## Async Channels vs Async Algorithms AsyncChannel
-
-Apple has their own channel implementation in the [swift-async-algorithms package](https://github.com/apple/swift-async-algorithms/blob/main/Sources/AsyncAlgorithms/AsyncAlgorithms.docc/Guides/Channel.md). We cannot compare every benchmark since it does not support buffering or select.
+Async algorithms channel seems to fall apart with write contention on non integer types. 
 
 
-### Why is swift slower than go?
+## Why is swift slower than go?
 
 The Swift compiler will not emit specialized implementations of generic structures (in this case, the channel and it's internals). Instead, it will use runtime generics which have significant overhead. 
 

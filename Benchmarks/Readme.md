@@ -36,50 +36,54 @@ The below results are from running the whole benchmark suit which covers multipl
 
 Test | Type | Execution Time(ms)
 -----|------|---------------
-SPSC | `Int` | `1117`
-MPSC | `Int` | `737`
-SPMC | `Int` | `881`
-MPMC | `Int` | `959`
-MPSC Write Contention | `Int` | `723`
-SPSC Buffered(100) | `Int` | `513`
-MPSC Buffered(100) | `Int` | `637`
-SPMC Buffered(100) | `Int` | `646`
-MPMC Buffered(100) | `Int` | `956`
-SyncRW | `Int` | `1531`
-Channel multi-select | `Int` | `1547`
-SPSC | `String` | `1292`
-MPSC | `String` | `850`
-SPMC | `String` | `923`
-MPMC | `String` | `1004`
-MPSC Write Contention | `String` | `848`
-SPSC Buffered(100) | `String` | `760`
-MPSC Buffered(100) | `String` | `698`
-SPMC Buffered(100) | `String` | `709`
-MPMC Buffered(100) | `String` | `1011`
-SyncRW | `String` | `1707`
-Channel multi-select | `String` | `1590`
-SPSC | `ValueData` | `1210`
-MPSC | `ValueData` | `790`
-SPMC | `ValueData` | `902`
-MPMC | `ValueData` | `975`
-MPSC Write Contention | `ValueData` | `785`
-SPSC Buffered(100) | `ValueData` | `497`
-MPSC Buffered(100) | `ValueData` | `658`
-SPMC Buffered(100) | `ValueData` | `659`
-MPMC Buffered(100) | `ValueData` | `978`
-SyncRW | `ValueData` | `1526`
-Channel multi-select | `ValueData` | `1567`
-SPSC | `RefData` | `1320`
-MPSC | `RefData` | `934`
-SPMC | `RefData` | `986`
-MPMC | `RefData` | `1261`
-MPSC Write Contention | `RefData` | `1492`
-SPSC Buffered(100) | `RefData` | `698`
-MPSC Buffered(100) | `RefData` | `774`
-SPMC Buffered(100) | `RefData` | `807`
-MPMC Buffered(100) | `RefData` | `1224`
-SyncRW | `RefData` | `1725`
-Channel multi-select | `RefData` | `1567`
+SPSC | `Int` | `1090`
+MPSC | `Int` | `698`
+SPMC | `Int` | `887`
+MPMC | `Int` | `957`
+MPSC Write Contention | `Int` | `707`
+SPSC Buffered(100) | `Int` | `604`
+MPSC Buffered(100) | `Int` | `639`
+SPMC Buffered(100) | `Int` | `642`
+MPMC Buffered(100) | `Int` | `960`
+MPSC Write Contention Buffered(100) | `Int` | `1095`
+SyncRW | `Int` | `1505`
+Channel multi-select | `Int` | `1172`
+SPSC | `String` | `1299`
+MPSC | `String` | `830`
+SPMC | `String` | `911`
+MPMC | `String` | `1001`
+MPSC Write Contention | `String` | `828`
+SPSC Buffered(100) | `String` | `725`
+MPSC Buffered(100) | `String` | `703`
+SPMC Buffered(100) | `String` | `691`
+MPMC Buffered(100) | `String` | `1014`
+MPSC Write Contention Buffered(100) | `String` | `1152`
+SyncRW | `String` | `1703`
+Channel multi-select | `String` | `1190`
+SPSC | `ValueData` | `1167`
+MPSC | `ValueData` | `772`
+SPMC | `ValueData` | `904`
+MPMC | `ValueData` | `977`
+MPSC Write Contention | `ValueData` | `768`
+SPSC Buffered(100) | `ValueData` | `496`
+MPSC Buffered(100) | `ValueData` | `652`
+SPMC Buffered(100) | `ValueData` | `645`
+MPMC Buffered(100) | `ValueData` | `987`
+MPSC Write Contention Buffered(100) | `ValueData` | `1158`
+SyncRW | `ValueData` | `1485`
+Channel multi-select | `ValueData` | `1176`
+SPSC | `RefData` | `1306`
+MPSC | `RefData` | `933`
+SPMC | `RefData` | `969`
+MPMC | `RefData` | `1219`
+MPSC Write Contention | `RefData` | `946`
+SPSC Buffered(100) | `RefData` | `675`
+MPSC Buffered(100) | `RefData` | `729`
+SPMC Buffered(100) | `RefData` | `742`
+MPMC Buffered(100) | `RefData` | `1220`
+MPSC Write Contention Buffered(100) | `RefData` | `1221`
+SyncRW | `RefData` | `1685`
+Channel multi-select | `RefData` | `1198`
 SPSC Async alg | `Int` | `3000`
 MPSC Async alg | `Int` | `4030`
 SPMC Async alg | `Int` | `3951`

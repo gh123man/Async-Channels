@@ -41,7 +41,7 @@ public final class Channel<T: Sendable>: @unchecked Sendable {
         return buffer.count
     }
     
-    var selectWaiter: AsyncSemaphore?
+    var selectWaiter: SelectSignal?
     
     @usableFromInline
     var isClosed: Bool {
@@ -50,7 +50,7 @@ public final class Channel<T: Sendable>: @unchecked Sendable {
         return closed
     }
     
-    func receiveOrListen(_ sema: AsyncSemaphore) -> T? {
+    func receiveOrListen(_ sema: SelectSignal) -> T? {
         mutex.lock()
         
         if let val = nonBlockingReceive() {
@@ -67,7 +67,7 @@ public final class Channel<T: Sendable>: @unchecked Sendable {
         return nil
     }
     
-    func sendOrListen(_ sema: AsyncSemaphore, value: T) -> Bool {
+    func sendOrListen(_ sema: SelectSignal, value: T) -> Bool {
         mutex.lock()
         
         if nonBlockingSend(value) {
@@ -168,6 +168,8 @@ public final class Channel<T: Sendable>: @unchecked Sendable {
         mutex.lock()
         defer { mutex.unlock() }
         closed = true
+        selectWaiter?.signal()
+        
         
         while let recvW = recvQueue.pop() {
             recvW.resume(returning: nil)

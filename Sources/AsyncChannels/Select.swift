@@ -9,7 +9,7 @@ public struct SelectHandler {
 }
 
 protocol SelectProtocol {
-    func handle(_ sm: AsyncSemaphore) async -> Bool
+    func handle(_ sm: SelectSignal) async -> Bool
 }
 
 struct RxHandler<T>: SelectProtocol {
@@ -22,7 +22,7 @@ struct RxHandler<T>: SelectProtocol {
         self.outFunc = outFunc
     }
     
-    func handle(_ sm: AsyncSemaphore) async -> Bool {
+    func handle(_ sm: SelectSignal) async -> Bool {
         if let val = chan.receiveOrListen(sm) {
             await outFunc(val)
             return true
@@ -42,7 +42,7 @@ struct NoneHandler: SelectProtocol {
         self.handler = handler
     }
     
-    func handle(_ sm: AsyncSemaphore) async -> Bool {
+    func handle(_ sm: SelectSignal) async -> Bool {
         await handler()
         return true
     }
@@ -59,7 +59,7 @@ struct TxHandler<T>: SelectProtocol {
         self.onSend = onSend
     }
     
-    func handle(_ sm: AsyncSemaphore) async -> Bool {
+    func handle(_ sm: SelectSignal) async -> Bool {
         if chan.sendOrListen(sm, value: val) {
             await onSend()
             return true
@@ -76,7 +76,7 @@ public struct SelectCollector {
 }
 
 @usableFromInline
-func handle(_ sm: AsyncSemaphore, handlers: [SelectHandler]) async -> Bool {
+func handle(_ sm: SelectSignal, handlers: [SelectHandler]) async -> Bool {
     var defaultCase: NoneHandler?
     
     for handler in handlers.shuffled() {
@@ -94,7 +94,7 @@ func handle(_ sm: AsyncSemaphore, handlers: [SelectHandler]) async -> Bool {
 public func select(@SelectCollector cases: () -> ([SelectHandler])) async {
     let handlers = cases()
     while true {
-        let sm = AsyncSemaphore(value: 0)
+        let sm = SelectSignal()
         if await handle(sm, handlers: handlers) {
             return
         }

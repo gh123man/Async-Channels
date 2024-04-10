@@ -28,7 +28,6 @@ actor SelectSignal {
         Task {
             await _signal()
         }
-        
     }
 }
 

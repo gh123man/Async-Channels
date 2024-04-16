@@ -242,12 +242,12 @@ func testMultiSelect<T: Initializable>(_ type: T.Type) async -> (String, String,
         
         while sum < 6 * 100_000 {
             await select {
-                rx(a) { sum += 1 }
-                rx(b) { sum += 1 }
-                rx(c) { sum += 1 }
-                rx(d) { sum += 1 }
-                rx(e) { sum += 1 }
-                rx(f) { sum += 1 }
+                receive(a) { sum += 1 }
+                receive(b) { sum += 1 }
+                receive(c) { sum += 1 }
+                receive(d) { sum += 1 }
+                receive(e) { sum += 1 }
+                receive(f) { sum += 1 }
             }
         }
     }

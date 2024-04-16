@@ -124,13 +124,13 @@ The loop will break when the channel is closed.
 
 ### Operations
 
-`rx(c)` receive a value, but do nothing with it. 
+`receive(c)` receive a value, but do nothing with it. 
 
-`rx(c) { v in ... }` receive a value and do something with it. 
+`receive(c) { v in ... }` receive a value and do something with it. 
 
-`tx(c, "foo")` send a value and do nothing.
+`send("foo", to: c)` send a value and do nothing.
 
-`tx(c, "foo") { ... }` run some code if a send is successful. 
+`send("foo", to: c) { ... }` run some code if a send is successful. 
 
 `none { ... }` if none of the channel operations were ready, none will execute instead. 
 
@@ -148,8 +148,8 @@ Task {
 
 // Will print foo or bar
 await select {
-    rx(d) { print($0!) }
-    rx(c) { print($0!) }
+    receive(d) { print($0!) }
+    receive(c) { print($0!) }
 }
 ```
 
@@ -165,7 +165,7 @@ for _ in (0..<10) {
 for _ in (0..<20) {
     await select {
         // receive from a and print it
-        rx(a) { print($0!) }
+        receive(a) { print($0!) }
         // send "b" to b
         tx(b, "b")
         // if both a and b suspend, print "NONE"

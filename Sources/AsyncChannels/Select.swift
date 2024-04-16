@@ -12,7 +12,7 @@ protocol SelectProtocol {
     func handle(_ sm: SelectSignal) async -> Bool
 }
 
-struct RxHandler<T>: SelectProtocol {
+struct ReceiveHandler<T>: SelectProtocol {
     
     private var chan: Channel<T>
     private let outFunc: (T?) async -> ()
@@ -48,7 +48,7 @@ struct NoneHandler: SelectProtocol {
     }
 }
 
-struct TxHandler<T>: SelectProtocol {
+struct SendHandler<T>: SelectProtocol {
     private var chan: Channel<T>
     private let val: T
     private let onSend: () async -> ()
@@ -102,24 +102,24 @@ public func select(@SelectCollector cases: () -> ([SelectHandler])) async {
     }
 }
 
-public func rx<T>(_ chan: Channel<T>, _ outFunc: @escaping (T?) async -> ()) -> SelectHandler {
-    return SelectHandler(inner: RxHandler(chan: chan, outFunc: outFunc))
+public func receive<T>(_ chan: Channel<T>, _ outFunc: @escaping (T?) async -> ()) -> SelectHandler {
+    return SelectHandler(inner: ReceiveHandler(chan: chan, outFunc: outFunc))
 }
 
-public func rx<T>(_ chan: Channel<T>, _ outFunc: @escaping () async -> ()) -> SelectHandler {
-    return SelectHandler(inner: RxHandler(chan: chan, outFunc: { _ in await outFunc() }))
+public func receive<T>(_ chan: Channel<T>, _ outFunc: @escaping () async -> ()) -> SelectHandler {
+    return SelectHandler(inner: ReceiveHandler(chan: chan, outFunc: { _ in await outFunc() }))
 }
 
-public func rx<T>(_ chan: Channel<T>) -> SelectHandler {
-    return SelectHandler(inner: RxHandler(chan: chan, outFunc: { _ in }))
+public func receive<T>(_ chan: Channel<T>) -> SelectHandler {
+    return SelectHandler(inner: ReceiveHandler(chan: chan, outFunc: { _ in }))
 }
 
-public func tx<T>(_ chan: Channel<T>, _ val: T) -> SelectHandler {
-    return SelectHandler(inner: TxHandler(chan: chan, val: val, onSend: {}))
+public func send<T>(_ val: T, to chan: Channel<T>) -> SelectHandler {
+    return SelectHandler(inner: SendHandler(chan: chan, val: val, onSend: {}))
 }
 
-public func tx<T>(_ chan: Channel<T>, _ val: T, _ onSend: @escaping () async -> ()) -> SelectHandler {
-    return SelectHandler(inner: TxHandler(chan: chan, val: val, onSend: onSend))
+public func send<T>(_ val: T, to chan: Channel<T>, _ onSend: @escaping () async -> ()) -> SelectHandler {
+    return SelectHandler(inner: SendHandler(chan: chan, val: val, onSend: onSend))
 }
 
 public func none(handler: @escaping () async -> ()) -> SelectHandler {

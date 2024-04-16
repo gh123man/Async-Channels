@@ -117,7 +117,7 @@ Swift has reserve words for `case` and `default` and the operator support is not
 <tr style="vertical-align: top;">
 <td> 
 
-`rx(c)`
+`receive(c)`
 </td><td>
 
 `case <-c:`
@@ -127,7 +127,7 @@ Swift has reserve words for `case` and `default` and the operator support is not
 <tr>
 <td> 
 
-`rx(c) { v in ... }`
+`receive(c) { v in ... }`
 </td><td>
 
 `case v := <-c: ...`
@@ -137,7 +137,7 @@ Swift has reserve words for `case` and `default` and the operator support is not
 <tr>
 <td> 
 
-`tx(c, "foo")`
+`send("foo", to: c)`
 </td><td>
 
 `case c <- "foo":`
@@ -147,7 +147,7 @@ Swift has reserve words for `case` and `default` and the operator support is not
 <tr>
 <td> 
 
-`tx(c, "foo") { ... }`
+`send("foo", to: c) { ... }`
 </td><td>
 
 `case c <- "foo": ...`
@@ -198,7 +198,7 @@ let a = Channel<String>(capacity: 1)
 await a <- "foo"
 
 await select {
-    rx(a) { av in
+    receive(a) { av in
         print(av!)
     }
     none {
@@ -235,7 +235,7 @@ default:
 let a = Channel<String>(capacity: 1)
 
 await select {
-    tx(a, "foo")
+    send("foo", to: a)
     none {
         print("Not called")
     }
@@ -271,7 +271,7 @@ fmt.Println(<-a)
 let a = Channel<Bool>()
 
 await select {
-    rx(a)
+    receive(a)
     none {
         print("Default case!")
     }

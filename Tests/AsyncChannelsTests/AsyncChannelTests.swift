@@ -17,8 +17,8 @@ final class AsyncTest: XCTestCase {
         let stop = Channel<Bool>()
         Task {
             await select {
-                rx(stop)
-                rx(sleep(for: duration)) {
+                receive(stop)
+                receive(sleep(for: duration)) {
                     XCTFail("Test timed out")
                     exit(1)
                 }
@@ -186,13 +186,13 @@ final class AsyncTest: XCTestCase {
         }
         
         await select {
-            rx(d) { await result <- $0! }
-            rx(c) { await result <- $0! }
+            receive(d) { await result <- $0! }
+            receive(c) { await result <- $0! }
         }
         
         await select {
-            rx(d) { await result <- $0! }
-            rx(c) { await result <- $0! }
+            receive(d) { await result <- $0! }
+            receive(c) { await result <- $0! }
         }
         result.close()
         
@@ -214,8 +214,8 @@ final class AsyncTest: XCTestCase {
 
         for _ in (0..<6) {
             await select {
-                rx(d) { await result <- $0! }
-                rx(c) { await result <- $0! }
+                receive(d) { await result <- $0! }
+                receive(c) { await result <- $0! }
             }
         }
         result.close()
@@ -241,10 +241,10 @@ final class AsyncTest: XCTestCase {
 
         let drain: () async -> Void = {
             await select {
-                rx(d) {
+                receive(d) {
                     XCTFail()
                 }
-                rx(c) {
+                receive(c) {
                     cCall += 1
                 }
                 none {
@@ -268,12 +268,12 @@ final class AsyncTest: XCTestCase {
 
         Task {
             await select {
-                rx(c) { await result <- true }
+                receive(c) { await result <- true }
                 none { XCTFail() }
             }
 
             await select {
-                rx(c) { XCTFail() }
+                receive(c) { XCTFail() }
                 none { await result <- true  }
             }
         }
@@ -304,9 +304,9 @@ final class AsyncTest: XCTestCase {
             var done = false
             while !done {
                 await select {
-                    rx(a)     { await c <- $0! }
-                    rx(b)     { await c <- $0! }
-                    rx(done1) { done = true }
+                    receive(a)     { await c <- $0! }
+                    receive(b)     { await c <- $0! }
+                    receive(done1) { done = true }
                 }
             }
         }
@@ -315,7 +315,7 @@ final class AsyncTest: XCTestCase {
         var count = 0
         while !done {
             await select {
-                rx(c) {
+                receive(c) {
                     count += 1
                     if count >= 2 * total {
                         done = true
@@ -345,10 +345,10 @@ final class AsyncTest: XCTestCase {
         var done = false
         while !done {
             await select {
-                rx(a) { count += 1 }
-                rx(b) { count += 1 }
-                rx(c) { count += 1 }
-                rx(d) { count += 1 }
+                receive(a) { count += 1 }
+                receive(b) { count += 1 }
+                receive(c) { count += 1 }
+                receive(d) { count += 1 }
                 none {
                     done = true
                 }
@@ -358,7 +358,7 @@ final class AsyncTest: XCTestCase {
         XCTAssertEqual(40, count)
     }
     
-    func testTx() async {
+    func testSend() async {
         let a = Channel<String>(capacity: 10)
         let b = Channel<String>(capacity: 10)
 
@@ -368,8 +368,8 @@ final class AsyncTest: XCTestCase {
 
         for _ in (0..<20) {
             await select {
-                rx(a)
-                tx(b, "b")
+                receive(a)
+                send("b", to: b)
                 none {
                     XCTFail()
                 }
@@ -380,7 +380,7 @@ final class AsyncTest: XCTestCase {
         var done = false
         while !done {
             await select {
-                rx(b) {
+                receive(b) {
                     countB += 1
                     XCTAssertEqual($0, "b")
                 }
@@ -393,12 +393,12 @@ final class AsyncTest: XCTestCase {
         XCTAssertEqual(10, countB)
     }
     
-    func testTxHandler() async {
+    func testSendHandler() async {
         let a = Channel<String>(capacity: 1)
         let testChan = Channel<Bool>(capacity: 1)
         
         await select {
-            tx(a, "b") {
+            send("b", to: a) {
                 await testChan <- true
             }
             none {
@@ -414,7 +414,7 @@ final class AsyncTest: XCTestCase {
 
         Task {
             await select {
-                rx(a) { val in
+                receive(a) { val in
                     XCTAssertNil(val)
                 }
             }
@@ -487,7 +487,7 @@ final class AsyncTest: XCTestCase {
             var done = false
             while !done {
                 await select {
-                    tx(c, true)
+                    send(true, to: c)
                     none {
                         done = true
                     }
@@ -525,7 +525,7 @@ final class AsyncTest: XCTestCase {
         var sum = 0
         while !done {
             await select {
-                rx(c) {
+                receive(c) {
                     sum += 1
                 }
                 none {

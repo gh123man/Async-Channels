@@ -167,7 +167,7 @@ for _ in (0..<20) {
         // receive from a and print it
         receive(a) { print($0!) }
         // send "b" to b
-        tx(b, "b")
+        send(b, "b")
         // if both a and b suspend, print "NONE"
         none {
             print("NONE")

@@ -15,7 +15,6 @@ struct LinkedList<T> {
     private var tail: Node?
     private(set) var count: Int = 0
 
-    @inlinable
     @inline(__always)
     mutating func push(_ value: T) {
         let node = Node(value: value)
@@ -30,7 +29,6 @@ struct LinkedList<T> {
         isEmpty = false
     }
     
-    @inlinable
     @inline(__always)
     mutating func pop() -> T? {
         let value = head?.value

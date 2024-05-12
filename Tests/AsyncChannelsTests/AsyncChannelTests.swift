@@ -80,6 +80,19 @@ final class AsyncTest: XCTestCase {
         await <-b
     }
     
+    func testUnbufferedPublicSendRec() async {
+        
+        let a = Channel<Int>()
+        let b = Channel<Int>()
+        
+        Task {
+            await _ = a.receive()
+            await b.send(0)
+        }
+        await a.send(0)
+        await _ = b.receive()
+    }
+    
     func testCloseNotify() async {
         let a = Channel<Bool>()
         let done = Channel<Bool>()

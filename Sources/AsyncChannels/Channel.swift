@@ -101,8 +101,8 @@ public final class Channel<T: Sendable>: @unchecked Sendable {
         return false
     }
     
-    @usableFromInline
-    func send(_ value: T) async {
+    @inline(__always)
+    public func send(_ value: T) async {
         mutex.lock()
         
         if nonBlockingSend(value) {
@@ -143,8 +143,8 @@ public final class Channel<T: Sendable>: @unchecked Sendable {
         return val
     }
 
-    @usableFromInline
-    func receive() async -> T? {
+    @inline(__always)
+    public func receive() async -> T? {
         mutex.lock()
 
         if let val = nonBlockingReceive() {

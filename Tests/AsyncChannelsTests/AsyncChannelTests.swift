@@ -224,13 +224,13 @@ final class AsyncTest: XCTestCase {
         }
         
         await select {
-            forEach([a, b]) {
+            any([a, b]) {
                 receive($0) { await result <- $0! }
             }
         }
         
         await select {
-            forEach([a, b]) {
+            any([a, b]) {
                 receive($0) { await result <- $0! }
             }
         }

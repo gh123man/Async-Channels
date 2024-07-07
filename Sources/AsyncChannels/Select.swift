@@ -154,7 +154,7 @@ public func none(handler: @escaping () async -> ()) -> [SelectHandler] {
 
 @inlinable
 @inline(__always)
-public func forEach<S, T>(_ seq: S, @SelectCollector cases: (T) -> ([SelectHandler])) -> [SelectHandler] where S: Sequence, S.Element == T {
+public func any<S, T>(_ seq: S, @SelectCollector cases: (T) -> ([SelectHandler])) -> [SelectHandler] where S: Sequence, S.Element == T {
     return seq.flatMap { cases($0) }
 }
 

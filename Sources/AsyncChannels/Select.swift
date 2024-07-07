@@ -158,3 +158,8 @@ public func any<S, T>(_ seq: S, @SelectCollector cases: (T) -> ([SelectHandler])
     return seq.flatMap { cases($0) }
 }
 
+@inlinable
+@inline(__always)
+public func any<T>(_ elements: T..., @SelectCollector cases: (T) -> ([SelectHandler])) -> [SelectHandler] {
+    return elements.flatMap { cases($0) }
+}

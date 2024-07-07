@@ -134,7 +134,7 @@ The loop will break when the channel is closed.
 
 `none { ... }` if none of the channel operations were ready, none will execute instead. 
 
-`any(seq) { el in ... }` operates on a sequence. It is useful for working with an array of channels.
+`any(x1, x2, ...) { x in ... }` or `any(seq) { el in ... }` operates on a sequence and is useful for working with an array of channels.
 
 ### Examples
 

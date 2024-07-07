@@ -83,8 +83,8 @@ struct SendHandler<T>: SelectProtocol {
 
 @resultBuilder
 public struct SelectCollector {
-    public static func buildBlock(_ handlers: SelectHandler...) -> [SelectHandler] {
-        return handlers
+    public static func buildBlock(_ handlers: [SelectHandler]...) -> [SelectHandler] {
+        return handlers.reduce([], +)
     }
 }
 
@@ -118,37 +118,48 @@ public func select(@SelectCollector cases: () -> ([SelectHandler])) async {
 
 @inlinable
 @inline(__always)
-public func receive<T>(_ chan: Channel<T>, _ outFunc: @escaping (T?) async -> ()) -> SelectHandler {
-    return SelectHandler(inner: ReceiveHandler(chan: chan, outFunc: outFunc))
+public func receive<T>(_ chan: Channel<T>, _ outFunc: @escaping (T?) async -> ()) -> [SelectHandler] {
+    return [SelectHandler(inner: ReceiveHandler(chan: chan, outFunc: outFunc))]
 }
 
 @inlinable
 @inline(__always)
-public func receive<T>(_ chan: Channel<T>, _ outFunc: @escaping () async -> ()) -> SelectHandler {
-    return SelectHandler(inner: ReceiveHandler(chan: chan, outFunc: { _ in await outFunc() }))
+public func receive<T>(_ chan: Channel<T>, _ outFunc: @escaping () async -> ()) -> [SelectHandler] {
+    return [SelectHandler(inner: ReceiveHandler(chan: chan, outFunc: { _ in await outFunc() }))]
 }
 
 @inlinable
 @inline(__always)
-public func receive<T>(_ chan: Channel<T>) -> SelectHandler {
-    return SelectHandler(inner: ReceiveHandler(chan: chan, outFunc: { _ in }))
+public func receive<T>(_ chan: Channel<T>) -> [SelectHandler] {
+    return [SelectHandler(inner: ReceiveHandler(chan: chan, outFunc: { _ in }))]
 }
 
 @inlinable
 @inline(__always)
-public func send<T>(_ val: T, to chan: Channel<T>) -> SelectHandler {
-    return SelectHandler(inner: SendHandler(chan: chan, val: val, onSend: {}))
+public func send<T>(_ val: T, to chan: Channel<T>) -> [SelectHandler] {
+    return [SelectHandler(inner: SendHandler(chan: chan, val: val, onSend: {}))]
 }
 
 @inlinable
 @inline(__always)
-public func send<T>(_ val: T, to chan: Channel<T>, _ onSend: @escaping () async -> ()) -> SelectHandler {
-    return SelectHandler(inner: SendHandler(chan: chan, val: val, onSend: onSend))
+public func send<T>(_ val: T, to chan: Channel<T>, _ onSend: @escaping () async -> ()) -> [SelectHandler] {
+    return [SelectHandler(inner: SendHandler(chan: chan, val: val, onSend: onSend))]
 }
 
 @inlinable
 @inline(__always)
-public func none(handler: @escaping () async -> ()) -> SelectHandler {
-    return SelectHandler(inner: NoneHandler(handler: handler))
+public func none(handler: @escaping () async -> ()) -> [SelectHandler] {
+    return [SelectHandler(inner: NoneHandler(handler: handler))]
 }
 
+@inlinable
+@inline(__always)
+public func any<S, T>(_ seq: S, @SelectCollector cases: (T) -> ([SelectHandler])) -> [SelectHandler] where S: Sequence, S.Element == T {
+    return seq.flatMap { cases($0) }
+}
+
+@inlinable
+@inline(__always)
+public func any<T>(_ elements: T..., @SelectCollector cases: (T) -> ([SelectHandler])) -> [SelectHandler] {
+    return elements.flatMap { cases($0) }
+}

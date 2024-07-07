@@ -266,6 +266,112 @@ final class AsyncTest: XCTestCase {
         let r = await result.reduce(into: []) { $0.append($1) }
         XCTAssertEqual(["foo", "bar"].sorted(), r.sorted())
     }
+    
+    func testOptionalSomeSelect() async {
+        let a = Channel<String>()
+        let result = Channel<String>(capacity: 1)
+        
+        Task {
+            await a <- "foo"
+        }
+        
+        await select {
+            if true {
+                receive(a) { await result <- $0! }
+            }
+        }
+
+        result.close()
+        
+        let r = await result.reduce(into: []) { $0.append($1) }
+        XCTAssertEqual(["foo"], r)
+    }
+    
+    func testOptionalNoneSelect() async throws {
+        let a = Channel<String>()
+        let result = Channel<String>(capacity: 1)
+        
+        Task {
+            await a <- "foo"
+        }
+        
+        Task {
+            await select {
+                if false {
+                    receive(a) { await result <- $0! }
+                }
+            }
+        }
+
+        for _ in (0..<10000) {
+            await Task.yield()
+        }
+        result.close()
+        
+        let r = await result.reduce(into: []) { $0.append($1) }
+        XCTAssertEqual([], r)
+    }
+    
+    func testEitherIfSelect() async {
+        let a = Channel<String>()
+        let b = Channel<String>()
+        let result = Channel<String>(capacity: 1)
+        
+        Task {
+            await a <- "foo"
+        }
+        
+        Task {
+            await b <- "bar"
+        }
+        
+        await select {
+            if false {
+                receive(a) { await result <- $0! }
+            } else {
+                receive(b) { await result <- $0! }
+            }
+        }
+
+        result.close()
+        
+        let r = await result.reduce(into: []) { $0.append($1) }
+        XCTAssertEqual(["bar"], r)
+    }
+    
+    func testEitherSwitchSelect() async {
+        let a = Channel<String>()
+        let b = Channel<String>()
+        let c = Channel<String>()
+        let result = Channel<String>(capacity: 2)
+        let x = 0
+        
+        Task {
+            await a <- "foo"
+        }
+        Task {
+            await b <- "bar"
+        }
+        Task {
+            await c <- "baz"
+        }
+        
+        await select {
+            switch x {
+            case 0:
+                receive(a) { await result <- $0! }
+            case 1:
+                receive(b) { await result <- $0! }
+            default:
+                receive(c) { await result <- $0! }
+            }
+        }
+
+        result.close()
+        
+        let r = await result.reduce(into: []) { $0.append($1) }
+        XCTAssertEqual(["foo"], r)
+    }
 
     func testBufferSelect() async {
         let c = Channel<String>(capacity: 3)

@@ -134,6 +134,8 @@ The loop will break when the channel is closed.
 
 `none { ... }` if none of the channel operations were ready, none will execute instead. 
 
+`forEach(chs) { ch in ... }` operate on an array of channels.
+
 ### Examples
 
 ```swift

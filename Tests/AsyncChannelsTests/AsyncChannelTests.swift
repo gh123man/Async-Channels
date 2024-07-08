@@ -240,32 +240,32 @@ final class AsyncTest: XCTestCase {
         XCTAssertEqual(["foo", "bar"].sorted(), r.sorted())
     }
     
-func testDynamicVariadicSelect() async {
-    let a = Channel<String>()
-    let b = Channel<String>()
-    let result = Channel<String>(capacity: 2)
-    
-    Task {
-        await a <- "foo"
-        await b <- "bar"
-    }
-    
-    await select {
-        any(a, b) {
-            receive($0) { await result <- $0! }
+    func testDynamicVariadicSelect() async {
+        let a = Channel<String>()
+        let b = Channel<String>()
+        let result = Channel<String>(capacity: 2)
+        
+        Task {
+            await a <- "foo"
+            await b <- "bar"
         }
-    }
-    
-    await select {
-        any(a, b) {
-            receive($0) { await result <- $0! }
+        
+        await select {
+            any(a, b) {
+                receive($0) { await result <- $0! }
+            }
         }
+        
+        await select {
+            any(a, b) {
+                receive($0) { await result <- $0! }
+            }
+        }
+        result.close()
+        
+        let r = await result.reduce(into: []) { $0.append($1) }
+        XCTAssertEqual(["foo", "bar"].sorted(), r.sorted())
     }
-    result.close()
-    
-    let r = await result.reduce(into: []) { $0.append($1) }
-    XCTAssertEqual(["foo", "bar"].sorted(), r.sorted())
-}
 
     func testBufferSelect() async {
         let c = Channel<String>(capacity: 3)

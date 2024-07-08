@@ -82,7 +82,7 @@ await msg <- "bar"
 print(await <-msg) // foo
 print(await <-msg) // bar
 
-// The channel is now empty. 
+// The msg channel is now empty. 
 ```
 
 ### Closing Channels
@@ -134,7 +134,7 @@ The loop will break when the channel is closed.
 
 `none { ... }` if none of the channel operations were ready, none will execute instead. 
 
-`any(x1, x2, ...) { x in ... }` or `any(seq) { el in ... }` operates on a sequence and is useful for working with an array of channels.
+`any(x1, x2, ...) { x in ... }` or `any(seq) { el in ... }` operates on a sequence and is useful for performing the same operations on multiple channels.
 
 ### Examples
 
@@ -159,7 +159,7 @@ await select {
 let a = Channel<String>(capacity: 10)
 let b = Channel<String>(capacity: 10)
 
-// Fill up a
+// Fill up channel a
 for _ in (0..<10) {
     await a <- "a"
 }
@@ -184,13 +184,10 @@ See the [Examples](/Examples/) folder for real world usage.
 
 - [Parallel image converter](/Examples/ImageConverter/Sources/ImageConverter/main.swift) - Saturate the CPU to convert images applying back pressure to the input. 
 
-## Notes
-
-If you are looking for a blocking variant of this library for traditional swift concurrency, check out my previous project [Swigo](https://github.com/gh123man/Swigo) which this library is based off of. 
-
 
 # Special Thanks
 
-I could not have gotten this far on my own without the help from the folks over at [forums.swift.org](https://forums.swift.org/t/async-channels-for-swift-concurrency/70752). Big shout-out and thank you to:
+I could not have gotten this far without the help from the folks over at [forums.swift.org](https://forums.swift.org/t/async-channels-for-swift-concurrency/70752) and contributors on github. Big shout-out and thank you to:
 - [wadetregaskis](https://forums.swift.org/u/wadetregaskis/summary) for optimizing much of this code and finding the more challenging performance limitations (compiler limitations, locking strategies)
 - [vns](https://forums.swift.org/u/vns/summary) for proposing a `LinkedList` backing data structure
+- [Kuniwak](https://github.com/Kuniwak) for proposing and adding the select `any` function.

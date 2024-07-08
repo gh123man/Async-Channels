@@ -281,8 +281,9 @@ final class AsyncTest: XCTestCase {
 
         for _ in (0..<6) {
             await select {
-                receive(d) { await result <- $0! }
-                receive(c) { await result <- $0! }
+                any(d, c) {
+                    receive($0) { await result <- $0! }
+                }
             }
         }
         result.close()
@@ -371,8 +372,9 @@ final class AsyncTest: XCTestCase {
             var done = false
             while !done {
                 await select {
-                    receive(a)     { await c <- $0! }
-                    receive(b)     { await c <- $0! }
+                    any(a, b) {
+                        receive($0) { await c <- $0! }
+                    }
                     receive(done1) { done = true }
                 }
             }
@@ -412,10 +414,9 @@ final class AsyncTest: XCTestCase {
         var done = false
         while !done {
             await select {
-                receive(a) { count += 1 }
-                receive(b) { count += 1 }
-                receive(c) { count += 1 }
-                receive(d) { count += 1 }
+                any(a, b, c, d) {
+                    receive($0) { count += 1 }
+                }
                 none {
                     done = true
                 }

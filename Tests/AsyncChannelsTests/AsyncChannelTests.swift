@@ -306,7 +306,7 @@ final class AsyncTest: XCTestCase {
         }
 
         await <-done
-        a.close()
+        await <-a
     }
     
     func testEitherIfSelect() async {
@@ -333,6 +333,7 @@ final class AsyncTest: XCTestCase {
         result.close()
         
         await assertChanRx(result, "bar")
+        await <-a
     }
     
     func testEitherSwitchSelect() async {
@@ -366,6 +367,8 @@ final class AsyncTest: XCTestCase {
         result.close()
         
         await assertChanRx(result, "foo")
+        await <-b
+        await <-c
     }
 
     func testBufferSelect() async {

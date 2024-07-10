@@ -289,7 +289,7 @@ final class AsyncTest: XCTestCase {
     
     func testOptionalNoneSelect() async throws {
         let a = Channel<String>()
-        let result = Channel<String>(capacity: 1)
+        let done = Channel<String>()
         
         Task {
             await a <- "foo"
@@ -298,18 +298,16 @@ final class AsyncTest: XCTestCase {
         Task {
             await select {
                 if false {
-                    receive(a) { await result <- $0! }
+                    receive(a) { XCTFail() }
+                }
+                none {
+                    await done <- "done"
                 }
             }
         }
 
-        for _ in (0..<10000) {
-            await Task.yield()
-        }
-        result.close()
-        
-        let r = await result.reduce(into: []) { $0.append($1) }
-        XCTAssertEqual([], r)
+        await <-done
+        a.close()
     }
     
     func testEitherIfSelect() async {

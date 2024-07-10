@@ -283,8 +283,7 @@ final class AsyncTest: XCTestCase {
 
         result.close()
         
-        let r = await result.reduce(into: []) { $0.append($1) }
-        XCTAssertEqual(["foo"], r)
+        await assertChanRx(result, "foo")
     }
     
     func testOptionalNoneSelect() async throws {
@@ -333,8 +332,7 @@ final class AsyncTest: XCTestCase {
 
         result.close()
         
-        let r = await result.reduce(into: []) { $0.append($1) }
-        XCTAssertEqual(["bar"], r)
+        await assertChanRx(result, "bar")
     }
     
     func testEitherSwitchSelect() async {
@@ -367,8 +365,7 @@ final class AsyncTest: XCTestCase {
 
         result.close()
         
-        let r = await result.reduce(into: []) { $0.append($1) }
-        XCTAssertEqual(["foo"], r)
+        await assertChanRx(result, "foo")
     }
 
     func testBufferSelect() async {

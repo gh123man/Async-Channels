@@ -86,6 +86,18 @@ public struct SelectCollector {
     public static func buildBlock(_ handlers: [SelectHandler]...) -> [SelectHandler] {
         return handlers.reduce([], +)
     }
+    
+    public static func buildOptional(_ handlers: [SelectHandler]?) -> [SelectHandler] {
+        return handlers ?? []
+    }
+    
+    public static func buildEither(first handlers: [SelectHandler]) -> [SelectHandler] {
+        return handlers
+    }
+    
+    public static func buildEither(second handlers: [SelectHandler]) -> [SelectHandler] {
+        return handlers
+    }
 }
 
 @inlinable

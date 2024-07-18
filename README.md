@@ -7,9 +7,9 @@ Performant channels for Swift concurrency.
 > 
 > \- Rob Pike
 
-If you are familiar with golang and the go ecosystem, you can skip to the [go comparisons section.](/GolangVsSwift.md)
-
 Channels are a typed conduit through which you can send and receive values - usually across threads or in this case, Swift async tasks. This library is modeled after go's channel behaviors. 
+
+If you are familiar with golang and the go ecosystem, you can skip to the [go comparisons section.](/GolangVsSwift.md)
 
 ## Example
 
@@ -17,17 +17,18 @@ Channels are a typed conduit through which you can send and receive values - usu
 let msg = Channel<String>(capacity: 3)
 let done = Channel<Bool>()
 
-await msg <- "Swift"
-await msg <- "❤️"
-await msg <- "Channels"
-msg.close()
-
 Task {
     for await message in msg {
         print(message)
     }
     await done <- true
 }
+
+await msg <- "Swift"
+await msg <- "❤️"
+await msg <- "Channels"
+
+msg.close()
 await <-done
 ```
 
@@ -214,6 +215,8 @@ await <-done
 ## Advanced Usage
 This library also includes some extra features that are made possible by the flexibility of Swift's `resultBuilder`. 
 
+### Examples
+
 Multiplexing `n:1` channels using select `any`
 ```swift
 let channels = (0..<100).map { _ in Channel<Bool>() }
@@ -244,6 +247,25 @@ var sum = 0
 for await _ in collected {
     sum += 1
 }
+```
+
+Conditional cases
+```swift 
+let a = Channel<String>()
+let b = Channel<String>()
+
+Task {
+    await a <- "foo"
+}
+
+var enableRecieve = true
+await select {
+    if enableRecieve {
+        receive(a) { await result <- $0! }
+    }
+    send("b", to: b)
+}
+
 ```
 
 ## Code Samples

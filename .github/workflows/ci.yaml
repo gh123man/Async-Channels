@@ -1,10 +1,11 @@
 name: Unit Tests
 
-on:
-  push:
-    branches: [ main ]
-  pull_request:
-    branches: [ main ]
+# TODO: reenable when https://github.com/swift-actions/setup-swift/issues/683 is resolved.
+# on:
+#   push:
+#     branches: [ main ]
+#   pull_request:
+#     branches: [ main ]
 
 jobs:
   build:

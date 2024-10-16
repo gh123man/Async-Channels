@@ -3,7 +3,7 @@ import AsyncChannels
 import CoreFoundation
 import AsyncAlgorithms
 
-
+let iterations = 10
 
 protocol Initializable: Sendable {
     init()

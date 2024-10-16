@@ -17,7 +17,7 @@ protocol SelectProtocol {
 }
 
 @usableFromInline
-struct ReceiveHandler<T>: SelectProtocol {
+struct ReceiveHandler<T: Sendable>: SelectProtocol {
     
     private var chan: Channel<T>
     private let outFunc: (T?) async -> ()
@@ -59,7 +59,7 @@ struct NoneHandler: SelectProtocol {
 }
 
 @usableFromInline
-struct SendHandler<T>: SelectProtocol {
+struct SendHandler<T: Sendable>: SelectProtocol {
     private var chan: Channel<T>
     private let val: T
     private let onSend: () async -> ()

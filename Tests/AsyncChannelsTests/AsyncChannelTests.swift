@@ -15,10 +15,11 @@ final class AsyncTest: XCTestCase {
     
     func failAfter(duration: Duration) -> Channel<Bool> {
         let stop = Channel<Bool>()
+        let sleepSig = sleep(for: .seconds(1))
         Task {
             await select {
                 receive(stop)
-                receive(sleep(for: duration)) {
+                receive(sleepSig) {
                     XCTFail("Test timed out")
                     exit(1)
                 }
@@ -615,7 +616,7 @@ final class AsyncTest: XCTestCase {
         a.close()
     }
     
-    class SomeData {
+    final class SomeData: Sendable {
         let name: String
         let age: Int
         
@@ -768,5 +769,41 @@ final class AsyncTest: XCTestCase {
         }
         
         XCTAssertEqual(100, sum)
+    }
+    
+    func testStopSig() async {
+        
+        enum StopSignal {
+            case error
+            case done
+        }
+        
+        let data = Channel<String>()
+        let signal = Channel<StopSignal>()
+        
+        
+        Task {
+            var done = false
+            while !done {
+                await select {
+                    receive(data) { print($0!) }
+                    receive(signal) {
+                        switch $0! {
+                        case .error:
+                            print("there was an error")
+                            done = true
+                        case .done:
+                            print("done processing data")
+                            done = true
+                        }
+                    }
+                }
+            }
+            print("done!")
+        }
+        
+        await data <- "foo"
+        await data <- "bar"
+        await signal <- .done
     }
 }

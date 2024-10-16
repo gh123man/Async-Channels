@@ -4,9 +4,8 @@ import CoreFoundation
 import AsyncAlgorithms
 
 
-let iterations = 10
 
-protocol Initializable {
+protocol Initializable: Sendable {
     init()
 }
 
@@ -26,7 +25,7 @@ struct ValueData: Initializable {
     }
 }
 
-class RefData: Initializable {
+final class RefData: Initializable {
     let foo: String
     let bar: Int
     required init() {

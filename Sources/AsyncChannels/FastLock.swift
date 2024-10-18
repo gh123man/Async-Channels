@@ -1,13 +1,17 @@
 import Foundation
 
 #if canImport(Darwin)
-struct FastLock {
+class FastLock {
     let unfairLock = {
         let l = UnsafeMutablePointer<os_unfair_lock>.allocate(capacity: 1)
         l.initialize(to: os_unfair_lock())
         return l
     }()
-   
+    
+    deinit {
+        unfairLock.deinitialize(count: 1)
+        unfairLock.deallocate()
+    }
 
     @inline(__always)
     func lock() {
@@ -18,7 +22,6 @@ struct FastLock {
     func unlock() {
         os_unfair_lock_unlock(unfairLock)
     }
-
 }
 
 #else
@@ -30,6 +33,10 @@ class FastLock {
         pthread_mutex_init(&m, nil)
         return m
     }()
+    
+    deinit {
+        pthread_mutex_destroy(&m)
+    }
 
     @inline(__always)
     func lock() {

@@ -806,4 +806,25 @@ final class AsyncTest: XCTestCase {
         await data <- "bar"
         await signal <- .done
     }
+    
+    func testSyncSendRecieve() {
+        let data = Channel<String>(capacity: 3)
+        
+        XCTAssertTrue(data.syncSend("1"))
+        XCTAssertTrue(data.syncSend("2"))
+        XCTAssertTrue(data.syncSend("3"))
+        XCTAssertFalse(data.syncSend("4"))
+        
+        XCTAssertEqual(data.syncReceive(), "1")
+        XCTAssertEqual(data.syncReceive(), "2")
+        XCTAssertEqual(data.syncReceive(), "3")
+        XCTAssertNil(data.syncReceive())
+        XCTAssertNil(data.syncReceive())
+        
+        XCTAssertTrue(data.syncSend("4"))
+        XCTAssertEqual(data.syncReceive(), "4")
+        
+        data.close()
+        XCTAssertNil(data.syncReceive())
+    }
 }

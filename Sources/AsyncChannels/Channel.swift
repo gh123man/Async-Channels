@@ -101,6 +101,8 @@ public final class Channel<T: Sendable>: @unchecked Sendable {
         return false
     }
     
+    /// Sends data on the channel. This function will suspend until a reciever is ready or buffer space is avalible.
+    /// - Parameter value: The data to send.
     @inline(__always)
     public func send(_ value: T) async {
         mutex.lock()
@@ -115,6 +117,19 @@ public final class Channel<T: Sendable>: @unchecked Sendable {
             mutex.unlock()
             waiter?.signal()
         }
+    }
+    
+    /// Sends data synchonosly. Returns true if the data was sent.
+    /// A fatal error will be triggered if you attpend to send on a closed channel.
+    /// - Parameter value: The input data.
+    @inline(__always)
+    public func syncSend(_ value: T) -> Bool {
+        mutex.lock()
+        if nonBlockingSend(value) {
+            return true
+        }
+        mutex.unlock()
+        return false
     }
     
     @inline(__always)
@@ -142,7 +157,10 @@ public final class Channel<T: Sendable>: @unchecked Sendable {
         }
         return val
     }
-
+    
+    /// Receive data from the channel. This function will suspend until a sender is ready or there is data in the buffer.
+    /// This functionw will return `nil` when the channel is closed after all buffered data is read.
+    /// - Returns: data or nil.
     @inline(__always)
     public func receive() async -> T? {
         mutex.lock()
@@ -164,12 +182,28 @@ public final class Channel<T: Sendable>: @unchecked Sendable {
         }
     }
     
+    
+    /// Receive data synchronosly. Returns nil if there is no data or the channel is closed.
+    /// This function will never block or suspend.
+    /// - Returns: The data or nil
+    @inline(__always)
+    public func syncReceive() -> T? {
+        mutex.lock()
+        if let val = nonBlockingReceive() {
+            return val
+        }
+        mutex.unlock()
+        return nil
+    }
+    
+    
+    /// Closes the channel. A channel cannot be reopened.
+    /// Once a channel is closed, no more data can be writeen. The remaining data can be read until the buffer is empty.
     public func close() {
         mutex.lock()
         defer { mutex.unlock() }
         closed = true
         selectWaiter?.signal()
-        
         
         while let recvW = recvQueue.pop() {
             recvW.resume(returning: nil)

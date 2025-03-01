@@ -43,8 +43,8 @@ public final class Channel<T: Sendable>: @unchecked Sendable {
     
     var selectWaiter: SelectSignal?
     
-    @usableFromInline
-    var isClosed: Bool {
+    @inline(__always)
+    public var isClosed: Bool {
         mutex.lock()
         defer { mutex.unlock() }
         return closed

@@ -1,74 +1,22 @@
-import XCTest
+import Testing
 @testable import AsyncChannels
 
-final class AsyncTest: XCTestCase {
+@Suite(.timeLimit(.minutes(1)))
+final class AsyncTest {
+    
     // MARK: Utils
-    
-    func sleep(for time: Duration) -> Channel<Bool> {
-       let signal = Channel<Bool>()
-       Task {
-           try? await Task.sleep(for: time)
-           await signal <- true
-       }
-       return signal
-    }
-    
-    func failAfter(duration: Duration) -> Channel<Bool> {
-        let stop = Channel<Bool>()
-        let sleepSig = sleep(for: .seconds(1))
-        Task {
-            await select {
-                receive(stop)
-                receive(sleepSig) {
-                    XCTFail("Test timed out")
-                    exit(1)
-                }
-            }
-        }
-        return stop
-    }
     
     func assertChanRx<T: Equatable>(_ channel: Channel<T>, _ expecting: T) async {
         guard let v = await <-channel else {
-            XCTFail()
+            Issue.record()
             return
         }
-        XCTAssertEqual(v, expecting)
-    }
-    
-    var stopTimeout: Channel<Bool>?
-    
-    
-// Aparently this crashes on linux
-#if canImport(Darwin)
-    // Each test is run 100 times.
-    // It's not always easy to validate correct concurrent behavior with asserts. In fact
-    // it's easy to miss things that can occor rarely such as race/timing issues. Sometimes
-    // when these bugs happen you will get a deadlock or a panic. By running the tests lots
-    // of times, we get better validation that these issues do not exist. It also helps
-    // catch incorrectly written tests that have race conditions in the way that they are
-    // written.
-    override func invokeTest() {
-        for _ in 0..<100 {
-            super.invokeTest()
-        }
-    }
-#endif
-    
-    
-    override func setUp() async throws {
-        try await super.setUp()
-        stopTimeout = failAfter(duration: .seconds(5))
-    }
-    
-    override func tearDown() async throws {
-        try await super.tearDown()
-        await stopTimeout? <- true
+        #expect(v == expecting)
     }
     
     // MARK: Tests
     
-    func testUnbuffered() async {
+    @Test func unbuffered() async {
         
         let a = Channel<Int>()
         let b = Channel<Int>()
@@ -81,8 +29,7 @@ final class AsyncTest: XCTestCase {
         await <-b
     }
     
-    func testUnbufferedPublicSendRec() async {
-        
+    @Test func unbufferedPublicSendRec() async {
         let a = Channel<Int>()
         let b = Channel<Int>()
         
@@ -94,7 +41,7 @@ final class AsyncTest: XCTestCase {
         await _ = b.receive()
     }
     
-    func testCloseNotify() async {
+    @Test func closeNotify() async {
         let a = Channel<Bool>()
         let done = Channel<Bool>()
 
@@ -118,7 +65,7 @@ final class AsyncTest: XCTestCase {
         await <-done
     }
     
-    func testBufferOrdering() async {
+    @Test func bufferOrdering() async {
         let a = Channel<Int>(capacity: 2)
         let resume = Channel<Bool>()
         let done = Channel<Bool>()
@@ -138,7 +85,7 @@ final class AsyncTest: XCTestCase {
         await <-done
     }
     
-    func testLoopChan() async {
+    @Test func loopChan() async {
         let a = Channel<Bool>(capacity: 10)
         let done = Channel<Int>()
 
@@ -157,10 +104,10 @@ final class AsyncTest: XCTestCase {
         
         let count = await <-done
 
-        XCTAssertEqual(count, 3)
+        #expect(count ==  3)
     }
     
-    func testCloseChan() async {
+    @Test func closeChan() async {
         let a = Channel<Int>(capacity: 10)
 
         Task {
@@ -172,10 +119,10 @@ final class AsyncTest: XCTestCase {
         }
 
         let count = await a.reduce(0) { $0 + $1 }
-        XCTAssertEqual(10, count)
+        #expect(10 == count)
     }
     
-    func testCloseEmpty() async {
+    @Test func closeEmpty() async {
         let a = Channel<String>()
         let done = Channel<Bool>()
 
@@ -189,7 +136,7 @@ final class AsyncTest: XCTestCase {
     }
     
     
-    func testSimpleSelect() async {
+    @Test func simpleSelect() async {
         let c = Channel<String>()
         let d = Channel<String>()
         let result = Channel<String>(capacity: 2)
@@ -211,10 +158,10 @@ final class AsyncTest: XCTestCase {
         result.close()
         
         let r = await result.reduce(into: []) { $0.append($1) }
-        XCTAssertEqual(["foo", "bar"].sorted(), r.sorted())
+        #expect(["foo", "bar"].sorted() == r.sorted())
     }
         
-    func testDynamicSelect() async {
+    @Test func dynamicSelect() async {
         let a = Channel<String>()
         let b = Channel<String>()
         let result = Channel<String>(capacity: 2)
@@ -238,10 +185,10 @@ final class AsyncTest: XCTestCase {
         result.close()
         
         let r = await result.reduce(into: []) { $0.append($1) }
-        XCTAssertEqual(["foo", "bar"].sorted(), r.sorted())
+        #expect(["foo", "bar"].sorted() == r.sorted())
     }
     
-    func testDynamicVariadicSelect() async {
+    @Test func dynamicVariadicSelect() async {
         let a = Channel<String>()
         let b = Channel<String>()
         let result = Channel<String>(capacity: 2)
@@ -265,10 +212,10 @@ final class AsyncTest: XCTestCase {
         result.close()
         
         let r = await result.reduce(into: []) { $0.append($1) }
-        XCTAssertEqual(["foo", "bar"].sorted(), r.sorted())
+        #expect(["foo", "bar"].sorted() == r.sorted())
     }
     
-    func testOptionalSomeSelect() async {
+    @Test func optionalSomeSelect() async {
         let a = Channel<String>()
         let result = Channel<String>(capacity: 1)
         
@@ -287,7 +234,7 @@ final class AsyncTest: XCTestCase {
         await assertChanRx(result, "foo")
     }
     
-    func testOptionalNoneSelect() async throws {
+    @Test func optionalNoneSelect() async throws {
         let a = Channel<String>()
         let done = Channel<String>()
         
@@ -298,7 +245,7 @@ final class AsyncTest: XCTestCase {
         Task {
             await select {
                 if false {
-                    receive(a) { XCTFail() }
+                    receive(a) { Issue.record() }
                 }
                 none {
                     await done <- "done"
@@ -310,7 +257,7 @@ final class AsyncTest: XCTestCase {
         await <-a
     }
     
-    func testEitherIfSelect() async {
+    @Test func eitherIfSelect() async {
         let a = Channel<String>()
         let b = Channel<String>()
         let result = Channel<String>(capacity: 1)
@@ -337,7 +284,7 @@ final class AsyncTest: XCTestCase {
         await <-a
     }
     
-    func testEitherSwitchSelect() async {
+    @Test func eitherSwitchSelect() async {
         let a = Channel<String>()
         let b = Channel<String>()
         let c = Channel<String>()
@@ -372,7 +319,7 @@ final class AsyncTest: XCTestCase {
         await <-c
     }
 
-    func testBufferSelect() async {
+    @Test func bufferSelect() async {
         let c = Channel<String>(capacity: 3)
         let d = Channel<String>(capacity: 3)
         let result = Channel<String>(capacity: 6)
@@ -394,10 +341,10 @@ final class AsyncTest: XCTestCase {
         result.close()
         
         let r = await result.reduce(into: []) { $0.append($1) }
-        XCTAssertEqual(["foo", "foo", "foo", "bar", "bar", "bar"].sorted(), r.sorted())
+        #expect(["foo", "foo", "foo", "bar", "bar", "bar"].sorted() == r.sorted())
     }
     
-    func testSelectDefault() async {
+    @Test func selectDefault() async {
         let c = Channel<String>(capacity: 3)
         let d = Channel<String>(capacity: 3)
         let validate = Channel<Bool>(capacity: 1)
@@ -415,7 +362,7 @@ final class AsyncTest: XCTestCase {
         let drain: () async -> Void = {
             await select {
                 receive(d) {
-                    XCTFail()
+                    Issue.record()
                 }
                 receive(c) {
                     cCall += 1
@@ -430,10 +377,10 @@ final class AsyncTest: XCTestCase {
         await drain()
 
         await assertChanRx(validate, true)
-        XCTAssertEqual(cCall, 1)
+        #expect(cCall == 1)
     }
     
-    func testNonBlockingRead() async {
+    @Test func nonBlockingRead() async {
 
         let c = Channel<Bool>(capacity: 1)
         await c <- true
@@ -442,11 +389,11 @@ final class AsyncTest: XCTestCase {
         Task {
             await select {
                 receive(c) { await result <- true }
-                none { XCTFail() }
+                none { Issue.record() }
             }
 
             await select {
-                receive(c) { XCTFail() }
+                receive(c) { Issue.record() }
                 none { await result <- true  }
             }
         }
@@ -454,7 +401,7 @@ final class AsyncTest: XCTestCase {
         await <-result
     }
     
-    func testManyToOne() async {
+    @Test func manyToOne() async {
         let a = Channel<Int>()
         let b = Channel<Int>()
         let c = Channel<Int>()
@@ -499,10 +446,10 @@ final class AsyncTest: XCTestCase {
 
         }
 
-        XCTAssertEqual(count, 2 * total)
+        #expect(count == 2 * total)
     }
     
-    func testOutOfOrder() async {
+    @Test func outOfOrder() async {
         let a = Channel<String>(capacity: 10)
         let b = Channel<String>(capacity: 10)
         let c = Channel<String>(capacity: 10)
@@ -528,10 +475,10 @@ final class AsyncTest: XCTestCase {
             }
             
         }
-        XCTAssertEqual(40, count)
+        #expect(40 == count)
     }
     
-    func testSend() async {
+    @Test func sendTest() async {
         let a = Channel<String>(capacity: 10)
         let b = Channel<String>(capacity: 10)
 
@@ -544,7 +491,7 @@ final class AsyncTest: XCTestCase {
                 receive(a)
                 send("b", to: b)
                 none {
-                    XCTFail()
+                    Issue.record()
                 }
             }
         }
@@ -555,7 +502,7 @@ final class AsyncTest: XCTestCase {
             await select {
                 receive(b) {
                     countB += 1
-                    XCTAssertEqual($0, "b")
+                    #expect($0 == "b")
                 }
                 none {
                     done = true
@@ -563,10 +510,10 @@ final class AsyncTest: XCTestCase {
             }
         }
 
-        XCTAssertEqual(10, countB)
+        #expect(10 == countB)
     }
     
-    func testSendHandler() async {
+    @Test func sendHandler() async {
         let a = Channel<String>(capacity: 1)
         let testChan = Channel<Bool>(capacity: 1)
         
@@ -575,20 +522,20 @@ final class AsyncTest: XCTestCase {
                 await testChan <- true
             }
             none {
-                XCTFail()
+                Issue.record()
             }
         }
         await assertChanRx(testChan, true)
     }
     
-    func testCloseSelect() async {
+    @Test func closeSelect() async {
         let a = Channel<String>(capacity: 10)
         let done = Channel<Bool>()
 
         Task {
             await select {
                 receive(a) { val in
-                    XCTAssertNil(val)
+                    #expect(val == nil)
                 }
             }
             await done <- true
@@ -599,7 +546,7 @@ final class AsyncTest: XCTestCase {
         await <-done
     }
     
-    func testReadClose() async {
+    @Test func readClose() async {
         let a = Channel<Bool>()
         a.close()
         await <-a
@@ -607,7 +554,7 @@ final class AsyncTest: XCTestCase {
         await <-a
     }
     
-    func testCloseForeverRead() async {
+    @Test func closeForeverRead() async {
         let a = Channel<Bool>()
 
         Task {
@@ -626,7 +573,7 @@ final class AsyncTest: XCTestCase {
         }
     }
     
-    func testStructSend() async {
+    @Test func structSend() async {
         
         let c = Channel<SomeData>()
         
@@ -645,13 +592,13 @@ final class AsyncTest: XCTestCase {
         
         var count = 0
         for await name in b.map({ $0.name }) {
-            XCTAssertEqual(name, "bar")
+            #expect(name == "bar")
             count += 1
         }
-        XCTAssertEqual(count, 3)
+        #expect(count == 3)
     }
-    
-    func testBlockWhenFull() async {
+
+    @Test func blockWhenFull() async {
 
         let c = Channel<Bool>(capacity: 100)
         let blocked = Channel<Bool>()
@@ -677,10 +624,10 @@ final class AsyncTest: XCTestCase {
             sum += 1
         }
         
-        XCTAssertEqual(sum, 100)
+        #expect(sum == 100)
     }
     
-    func testBlockWhenEmpty() async {
+    @Test func blockWhenEmpty() async {
         
 
         let c = Channel<Bool>(capacity: 100)
@@ -707,10 +654,10 @@ final class AsyncTest: XCTestCase {
             }
         }
         
-        XCTAssertEqual(sum, 100)
+        #expect(sum == 100)
     }
     
-    func testWaitGroup() async {
+    @Test func waitGrouptest() async {
         
         let wg = WaitGroup()
         let signal = Channel<Bool>()
@@ -738,7 +685,7 @@ final class AsyncTest: XCTestCase {
         await <-done
     }
     
-    func testMultiplex() async {
+    @Test func Multiplex() async {
         let channels = (0..<100).map { _ in Channel<Bool>() }
         let collected = Channel<Bool>()
         
@@ -768,10 +715,10 @@ final class AsyncTest: XCTestCase {
             sum += 1
         }
         
-        XCTAssertEqual(100, sum)
+        #expect(100 == sum)
     }
     
-    func testStopSig() async {
+    @Test func StopSig() async {
         
         enum StopSignal {
             case error
@@ -807,24 +754,24 @@ final class AsyncTest: XCTestCase {
         await signal <- .done
     }
     
-    func testSyncSendRecieve() {
+    @Test func SyncSendRecieve() {
         let data = Channel<String>(capacity: 3)
         
-        XCTAssertTrue(data.syncSend("1"))
-        XCTAssertTrue(data.syncSend("2"))
-        XCTAssertTrue(data.syncSend("3"))
-        XCTAssertFalse(data.syncSend("4"))
+        #expect(data.syncSend("1"))
+        #expect(data.syncSend("2"))
+        #expect(data.syncSend("3"))
+        #expect(!data.syncSend("4"))
         
-        XCTAssertEqual(data.syncReceive(), "1")
-        XCTAssertEqual(data.syncReceive(), "2")
-        XCTAssertEqual(data.syncReceive(), "3")
-        XCTAssertNil(data.syncReceive())
-        XCTAssertNil(data.syncReceive())
+        #expect(data.syncReceive() == "1")
+        #expect(data.syncReceive() == "2")
+        #expect(data.syncReceive() == "3")
+        #expect(data.syncReceive() == nil)
+        #expect(data.syncReceive() == nil)
         
-        XCTAssertTrue(data.syncSend("4"))
-        XCTAssertEqual(data.syncReceive(), "4")
+        #expect(data.syncSend("4"))
+        #expect(data.syncReceive() == "4")
         
         data.close()
-        XCTAssertNil(data.syncReceive())
+        #expect(data.syncReceive() == nil)
     }
 }

@@ -1,13 +1,11 @@
 # Async Channels
 
-Performant channels for Swift concurrency.
-
-
-> Don't communicate by sharing memory; share memory by communicating
-> 
-> \- Rob Pike
+Performant MPMC (**M**ulti **P**roducer **M**ulti **C**onsumer) channels for swift concurrency. 
 
 Channels are a typed conduit through which you can send and receive values - usually across threads or in this case, Swift async tasks. This library is modeled after go's channel behaviors. 
+
+This library provides an async channel implementation with useful features such as: `select`, sequence operations, blocking/non-blocking operations, and more. 
+
 
 If you are familiar with golang and the go ecosystem, you can skip to the [go comparisons section.](/GolangVsSwift.md)
 
@@ -54,7 +52,7 @@ For more detailed results (on a variety of data types) see the [Benchmarks](/Ben
 ## Channel Operations
 
 
-Un-Buffered Channels
+### Un-Buffered Channels
 ```swift
 // Create an un-buffered channel
 let msg = Channel<String>()
@@ -70,7 +68,7 @@ Task {
 }
 ```
 
-Buffered Channels
+### Buffered Channels
 ```swift
 // Create a buffered channel that can hold 2 items
 let msg = Channel<String>(capacity: 2)
@@ -179,7 +177,42 @@ for _ in (0..<20) {
 }
 ```
 
-## Wait Group
+## Synchronizing async and non-async code
+
+In some cases it may be desirable to synchronize async functions with non async swift code. Usually you can do this with a `DispatchSemaphore` or similar synchronization primitive, however this library provides [useful extensions](https://github.com/gh123man/Async-Channels/blob/main/Sources/AsyncChannels/Channel%2BExtensions.swift#L17-L42) to make this process simpler:
+
+```swift 
+let resultChannel = Channel<Void>()
+
+Task {
+    // Do some async work
+    let result = await doLongAsyncWork()
+    await resultChannel <- result
+}
+
+// Block the current thread until the work is done, receiving the result
+let result = resultChannel.blockingReceive()
+```
+
+You may also do the opposite and block while sending:
+
+```swift 
+let dataChannel = Channel<String>()
+
+Task {
+    // doLongAsyncWork will eventually read the channel
+    await doLongAsyncWork(dataChannel)
+}
+
+// Block the current thread until the async task reads the channel
+let result = resultChannel.blockingSend("Hello world")
+```
+
+You an also synchronously poll a channel if it is ready or not without blocking using `syncReceive`. Similarly you can use `syncSend` to send a value synchronously without blocking. Note that in both cases, if the channel is full it will discard the sent value or return `nil` on receive. 
+
+
+
+## WaitGroup
 
 This library also includes a `WaitGroup` implementation. Wait groups are useful when you want to wait for multiple tasks to finish. 
 
@@ -217,7 +250,7 @@ This library also includes some extra features that are made possible by the fle
 
 ### Examples
 
-Multiplexing `n:1` channels using select `any`
+#### Multiplexing `n:1` channels using select `any`
 ```swift
 let channels = (0..<100).map { _ in Channel<Bool>() }
 let collected = Channel<Bool>()
@@ -249,7 +282,7 @@ for await _ in collected {
 }
 ```
 
-Conditional cases
+#### Conditional cases
 ```swift 
 let a = Channel<String>()
 let b = Channel<String>()
@@ -265,8 +298,8 @@ await select {
     }
     send("b", to: b)
 }
-
 ```
+
 
 ## Code Samples
 

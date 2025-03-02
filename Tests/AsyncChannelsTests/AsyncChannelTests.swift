@@ -1,18 +1,17 @@
 import Testing
 @testable import AsyncChannels
 
+func assertChanRx<T: Equatable>(_ channel: Channel<T>, _ expecting: T) async {
+    guard let v = await <-channel else {
+        Issue.record()
+        return
+    }
+    #expect(v == expecting)
+}
+
 @Suite(.timeLimit(.minutes(1)))
 final class AsyncTest {
     
-    // MARK: Utils
-    
-    func assertChanRx<T: Equatable>(_ channel: Channel<T>, _ expecting: T) async {
-        guard let v = await <-channel else {
-            Issue.record()
-            return
-        }
-        #expect(v == expecting)
-    }
     
     // MARK: Tests
     
@@ -754,7 +753,7 @@ final class AsyncTest {
         await signal <- .done
     }
     
-    @Test func SyncSendRecieve() {
+    @Test func SyncSendReceive() {
         let data = Channel<String>(capacity: 3)
         
         #expect(data.syncSend("1"))
@@ -773,5 +772,49 @@ final class AsyncTest {
         
         data.close()
         #expect(data.syncReceive() == nil)
+    }
+    
+    @Test func blockingReceive() {
+        let c = Channel<Void>()
+        let counter = Channel<Int>()
+        
+        Task {
+            await c <- ()
+            await counter <- 1
+            
+            await c <- ()
+            await counter <- 2
+            
+            await c <- ()
+            await counter <- 3
+        }
+        
+        #expect(counter.syncReceive() == nil)
+        c.blockingReceive()
+        #expect(counter.blockingReceive() == 1)
+        #expect(counter.syncReceive() == nil)
+        c.blockingReceive()
+        #expect(counter.blockingReceive() == 2)
+        #expect(counter.syncReceive() == nil)
+        c.blockingReceive()
+        #expect(counter.blockingReceive() == 3)
+        #expect(counter.syncReceive() == nil)
+    }
+    
+    @Test func blockingSend() {
+        let counter = Channel<Int>()
+        let done = Channel<Void>()
+        
+        Task {
+            await assertChanRx(counter, 1)
+            await assertChanRx(counter, 2)
+            await assertChanRx(counter, 3)
+            await done <- ()
+        }
+        
+        counter.blockingSend(1)
+        counter.blockingSend(2)
+        counter.blockingSend(3)
+        #expect(done.blockingReceive()! == ())
     }
 }

@@ -258,9 +258,9 @@ Task {
     await a <- "foo"
 }
 
-var enableRecieve = true
+var enableReceive = true
 await select {
-    if enableRecieve {
+    if enableReceive {
         receive(a) { await result <- $0! }
     }
     send("b", to: b)

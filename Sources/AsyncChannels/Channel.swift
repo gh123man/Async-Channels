@@ -101,7 +101,7 @@ public final class Channel<T: Sendable>: @unchecked Sendable {
         return false
     }
     
-    /// Sends data on the channel. This function will suspend until a reciever is ready or buffer space is avalible.
+    /// Sends data on the channel. This function will suspend until a receiver is ready or buffer space is avalible.
     /// - Parameter value: The data to send.
     @inline(__always)
     public func send(_ value: T) async {

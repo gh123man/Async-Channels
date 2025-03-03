@@ -64,6 +64,22 @@ class TestData {
     }
 }
 
+class TestDataDeinit {
+    let foo: String
+    let bar: Int
+    
+    init() {
+        self.foo = "foo"
+        self.bar = 123
+    }
+    
+    deinit {
+        print("deinited")
+    }
+}
+
+
+
 struct TestStruct {
     var foo: String
     var bar: Int
@@ -95,6 +111,11 @@ func testCoherency() {
     d[0] = "baz"
     print(l4.pop()!)
     print(d)
+    
+    var l5 = RawLinkedList<TestDataDeinit>()
+    l5.push(TestDataDeinit())
+    let retained = l5.pop()!
+    print(retained.foo)
 }
 
 

@@ -22,17 +22,19 @@ prefix operator <-
     return await chan.receive()
 }
 
+extension OpaquePointer: @unchecked Sendable {}
+
 public final class Channel<T: Sendable>: @unchecked Sendable {
     private var mutex = FastLock()
     private let capacity: Int
     private var closed = false
-    private var buffer: LinkedList<T>
-    private var sendQueue = LinkedList<(T, UnsafeContinuation<Void, Never>)>()
-    private var recvQueue = LinkedList<UnsafeContinuation<T?, Never>>()
+    private var buffer: PtrLinkedList
+    private var sendQueue = LinkedList<(OpaquePointer, UnsafeContinuation<Void, Never>)>()
+    private var recvQueue = LinkedList<UnsafeContinuation<OpaquePointer?, Never>>()
 
     public init(capacity: Int = 0) {
         self.capacity = capacity
-        self.buffer = LinkedList<T>()
+        self.buffer = PtrLinkedList()
     }
 
     var count: Int {
@@ -70,7 +72,7 @@ public final class Channel<T: Sendable>: @unchecked Sendable {
     func sendOrListen(_ sema: SelectSignal, value: T) -> Bool {
         mutex.lock()
         
-        if nonBlockingSend(value) {
+        if nonBlockingSend(ptr(value)) {
             return true
         }
         
@@ -80,7 +82,7 @@ public final class Channel<T: Sendable>: @unchecked Sendable {
     }
     
     @inline(__always)
-    private func nonBlockingSend(_ value: T) -> Bool {
+    private func nonBlockingSend(_ p: OpaquePointer) -> Bool {
         if closed {
             fatalError("Cannot send on a closed channel")
         }
@@ -88,12 +90,12 @@ public final class Channel<T: Sendable>: @unchecked Sendable {
         if !recvQueue.isEmpty {
             let r = recvQueue.pop()!
             mutex.unlock()
-            r.resume(returning: value)
+            r.resume(returning: p)
             return true
         }
 
         if buffer.count < capacity {
-            buffer.push(value)
+            buffer.push(p)
             mutex.unlock()
             return true
         }
@@ -106,13 +108,14 @@ public final class Channel<T: Sendable>: @unchecked Sendable {
     @inline(__always)
     public func send(_ value: T) async {
         mutex.lock()
+        let p = ptr(value)
         
-        if nonBlockingSend(value) {
+        if nonBlockingSend(p) {
             return
         }
         
         await withUnsafeContinuation { continuation in
-            sendQueue.push((value, continuation))
+            sendQueue.push((p, continuation))
             let waiter = selectWaiter
             mutex.unlock()
             waiter?.signal()
@@ -125,7 +128,7 @@ public final class Channel<T: Sendable>: @unchecked Sendable {
     @inline(__always)
     public func syncSend(_ value: T) -> Bool {
         mutex.lock()
-        if nonBlockingSend(value) {
+        if nonBlockingSend(ptr(value)) {
             return true
         }
         mutex.unlock()
@@ -136,16 +139,16 @@ public final class Channel<T: Sendable>: @unchecked Sendable {
     private func nonBlockingReceive() -> T? {
         if buffer.isEmpty {
             if !sendQueue.isEmpty {
-                let (value, continuation) = sendQueue.pop()!
+                let (p, continuation) = sendQueue.pop()!
                 mutex.unlock()
                 continuation.resume()
-                return value
+                return value(p)
             } else {
                 return nil
             }
         }
         
-        let val = buffer.pop()
+        let p = buffer.pop()
         
         if !sendQueue.isEmpty {
             let (value, continuation) = sendQueue.pop()!
@@ -155,7 +158,7 @@ public final class Channel<T: Sendable>: @unchecked Sendable {
         } else {
             mutex.unlock()
         }
-        return val
+        return value(p!)
     }
     
     /// Receive data from the channel. This function will suspend until a sender is ready or there is data in the buffer.
@@ -174,12 +177,16 @@ public final class Channel<T: Sendable>: @unchecked Sendable {
             return nil
         }
         
-        return await withUnsafeContinuation { continuation in
+        let p = await withUnsafeContinuation { continuation in
             recvQueue.push(continuation)
             let waiter = selectWaiter
             mutex.unlock()
             waiter?.signal()
         }
+        if let p = p {
+            return value(p)
+        }
+        return nil
     }
     
     
@@ -208,5 +215,38 @@ public final class Channel<T: Sendable>: @unchecked Sendable {
         while let recvW = recvQueue.pop() {
             recvW.resume(returning: nil)
         }
+    }
+}
+
+
+extension Channel where T: AnyObject {
+    @inlinable
+    @inline(__always)
+    public func ptr(_ value: T) -> OpaquePointer {
+        return OpaquePointer(Unmanaged.passRetained(value).toOpaque())
+    }
+    
+    @inlinable
+    @inline(__always)
+    func value(_ p: OpaquePointer) -> T? {
+        return Unmanaged<T>.fromOpaque(UnsafeRawPointer(p)!).takeRetainedValue()
+    }
+}
+
+
+extension Channel where T: Any {
+    @inlinable
+    @inline(__always)
+    func ptr(_ value: T) -> OpaquePointer {
+        let ptr = UnsafeMutablePointer<T>.allocate(capacity: 1)
+        ptr.initialize(to: value)
+        let optr = OpaquePointer(ptr)
+        return optr
+    }
+    
+    @inlinable
+    @inline(__always)
+    func value(_ p: OpaquePointer?) -> T? {
+        return UnsafeMutablePointer<T>(p)?.pointee
     }
 }

@@ -9,7 +9,6 @@ class FastLock {
     }()
     
     deinit {
-        unfairLock.deinitialize(count: 1)
         unfairLock.deallocate()
     }
 

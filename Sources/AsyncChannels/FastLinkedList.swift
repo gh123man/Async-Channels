@@ -95,6 +95,13 @@ public struct PtrLinkedList {
 public struct RawLinkedList<T> {
     
     private var data = PtrLinkedList()
+    var count: Int {
+        return data.count
+    }
+    
+    var isEmpty: Bool {
+        return data.isEmpty
+    }
     
     public init() {
     }

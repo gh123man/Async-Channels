@@ -34,7 +34,7 @@ actor SelectSignal {
 public actor WaitGroup {
     
     private var count = 0
-    private var continuationQueue = LinkedList<UnsafeContinuation<Void, Never>>()
+    private var continuationQueue = LinkedList<CheckedContinuation<Void, Never>>()
 
     public init(count: Int = 0) {
         self.count = count
@@ -51,12 +51,12 @@ public actor WaitGroup {
             while let waiter = continuationQueue.pop() {
                 waiter.resume()
             }
-            continuationQueue = LinkedList<UnsafeContinuation<Void, Never>>()
+            continuationQueue = LinkedList<CheckedContinuation<Void, Never>>()
         }
     }
     
     public func wait() async {
-        await withUnsafeContinuation { continuation in
+        await withCheckedContinuation { continuation in
             self.continuationQueue.push(continuation)
         }
     }

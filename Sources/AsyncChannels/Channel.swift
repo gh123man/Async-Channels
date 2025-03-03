@@ -65,9 +65,10 @@ public final class Channel<T: Sendable>: @unchecked Sendable {
     }
     
     func sendOrListen(_ sema: SelectSignal, value: T) -> Bool {
+        let p = ptr(value)
         mutex.lock()
         
-        if nonBlockingSend(ptr(value)) {
+        if nonBlockingSend(p) {
             return true
         }
         
@@ -122,8 +123,9 @@ public final class Channel<T: Sendable>: @unchecked Sendable {
     /// - Parameter value: The input data.
     @inline(__always)
     public func syncSend(_ value: T) -> Bool {
+        let p = ptr(value)
         mutex.lock()
-        if nonBlockingSend(ptr(value)) {
+        if nonBlockingSend(p) {
             return true
         }
         mutex.unlock()
@@ -134,7 +136,7 @@ public final class Channel<T: Sendable>: @unchecked Sendable {
     private func nonBlockingReceive() -> OpaquePointer? {
         if buffer.isEmpty {
             if !sendQueue.isEmpty {
-                let (p, continuation) = sendQueue.pop()!
+                let (p, continuation) = sendQueue.popFirst()!
                 mutex.unlock()
                 continuation.resume()
                 return p

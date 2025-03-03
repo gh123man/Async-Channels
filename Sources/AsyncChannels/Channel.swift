@@ -1,4 +1,5 @@
 import Foundation
+import Collections
 
 infix operator <- :AssignmentPrecedence
 
@@ -28,21 +29,15 @@ public final class Channel<T: Sendable>: @unchecked Sendable {
     private var mutex = FastLock()
     private let capacity: Int
     private var closed = false
-    private var buffer: PtrLinkedList
-    private var sendQueue = LinkedList<(OpaquePointer, UnsafeContinuation<Void, Never>)>()
-    private var recvQueue = LinkedList<UnsafeContinuation<OpaquePointer?, Never>>()
+    private var buffer: Deque<OpaquePointer>
+    private var sendQueue = Deque<(OpaquePointer, UnsafeContinuation<Void, Never>)>()
+    private var recvQueue = Deque<UnsafeContinuation<OpaquePointer?, Never>>()
 
     public init(capacity: Int = 0) {
         self.capacity = capacity
-        self.buffer = PtrLinkedList()
+        self.buffer = Deque(minimumCapacity: capacity)
     }
 
-    var count: Int {
-        mutex.lock()
-        defer { mutex.unlock() }
-        return buffer.count
-    }
-    
     var selectWaiter: SelectSignal?
     
     @inline(__always)
@@ -56,7 +51,7 @@ public final class Channel<T: Sendable>: @unchecked Sendable {
         mutex.lock()
         
         if let val = nonBlockingReceive() {
-            return val
+            return value(val)
         }
         
         if closed {
@@ -95,7 +90,7 @@ public final class Channel<T: Sendable>: @unchecked Sendable {
         }
 
         if buffer.count < capacity {
-            buffer.push(p)
+            buffer.append(p)
             mutex.unlock()
             return true
         }
@@ -115,7 +110,7 @@ public final class Channel<T: Sendable>: @unchecked Sendable {
         }
         
         await withUnsafeContinuation { continuation in
-            sendQueue.push((p, continuation))
+            sendQueue.append((p, continuation))
             let waiter = selectWaiter
             mutex.unlock()
             waiter?.signal()
@@ -136,29 +131,29 @@ public final class Channel<T: Sendable>: @unchecked Sendable {
     }
     
     @inline(__always)
-    private func nonBlockingReceive() -> T? {
+    private func nonBlockingReceive() -> OpaquePointer? {
         if buffer.isEmpty {
             if !sendQueue.isEmpty {
                 let (p, continuation) = sendQueue.pop()!
                 mutex.unlock()
                 continuation.resume()
-                return value(p)
+                return p
             } else {
                 return nil
             }
         }
         
-        let p = buffer.pop()
+        let p = buffer.popFirst()
         
         if !sendQueue.isEmpty {
-            let (value, continuation) = sendQueue.pop()!
-            buffer.push(value)
+            let (value, continuation) = sendQueue.popFirst()!
+            buffer.append(value)
             mutex.unlock()
             continuation.resume()
         } else {
             mutex.unlock()
         }
-        return value(p!)
+        return p
     }
     
     /// Receive data from the channel. This function will suspend until a sender is ready or there is data in the buffer.
@@ -169,7 +164,7 @@ public final class Channel<T: Sendable>: @unchecked Sendable {
         mutex.lock()
 
         if let val = nonBlockingReceive() {
-            return val
+            return value(val)
         }
         
         if closed {
@@ -178,15 +173,12 @@ public final class Channel<T: Sendable>: @unchecked Sendable {
         }
         
         let p = await withUnsafeContinuation { continuation in
-            recvQueue.push(continuation)
+            recvQueue.append(continuation)
             let waiter = selectWaiter
             mutex.unlock()
             waiter?.signal()
         }
-        if let p = p {
-            return value(p)
-        }
-        return nil
+        return value(p)
     }
     
     
@@ -197,7 +189,7 @@ public final class Channel<T: Sendable>: @unchecked Sendable {
     public func syncReceive() -> T? {
         mutex.lock()
         if let val = nonBlockingReceive() {
-            return val
+            return value(val)
         }
         mutex.unlock()
         return nil
@@ -212,7 +204,7 @@ public final class Channel<T: Sendable>: @unchecked Sendable {
         closed = true
         selectWaiter?.signal()
         
-        while let recvW = recvQueue.pop() {
+        while let recvW = recvQueue.popFirst() {
             recvW.resume(returning: nil)
         }
     }
@@ -247,6 +239,7 @@ extension Channel where T: Any {
     @inlinable
     @inline(__always)
     func value(_ p: OpaquePointer?) -> T? {
+        defer { UnsafeRawPointer(p)?.deallocate() }
         return UnsafeMutablePointer<T>(p)?.pointee
     }
 }

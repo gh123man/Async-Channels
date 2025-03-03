@@ -42,17 +42,164 @@ print()
 print("Test | Type | Execution Time(ms)")
 print("-----|------|---------------")
 
-await run(Int.self)
-await run(String.self)
-await run(ValueData.self)
-await run(RefData.self)
+testCoherency()
+//await testLL()
+//await run(Int.self)
+//await run(String.self)
+//await run(ValueData.self)
+//await run(RefData.self)
+//
+//await runAsyncAlg(Int.self)
+//await runAsyncAlg(String.self)
+//await runAsyncAlg(ValueData.self)
+//await runAsyncAlg(RefData.self)
 
-await runAsyncAlg(Int.self)
-await runAsyncAlg(String.self)
-await runAsyncAlg(ValueData.self)
-await runAsyncAlg(RefData.self)
+class TestData {
+    let foo: String
+    let bar: Int
+    
+    init() {
+        self.foo = "foo"
+        self.bar = 123
+    }
+}
+
+struct TestStruct {
+    var foo: String
+    var bar: Int
+    
+    init() {
+        self.foo = "foo"
+        self.bar = 123
+    }
+}
+
+func testCoherency() {
+    
+    var l1 = RawLinkedList<String>()
+    l1.push("foo")
+    print(l1.pop()!)
+    
+    var l2 = RawLinkedList<Int>()
+    l2.push(1)
+    print(l2.pop()!)
+    
+    var l3 = RawLinkedList<TestStruct>()
+    l3.push(TestStruct())
+    print(l3.pop()!.foo)
+    
+    
+    var d = ["foo", "bar"]
+    var l4 = RawLinkedList<[String]>()
+    l4.push(d)
+    d[0] = "baz"
+    print(l4.pop()!)
+    print(d)
+}
 
 
+func testLL() async {
+    let size = 100_000
+    let i = 2
+    
+    let classPointer = await timeIt(iterations: i) {
+        var ll = PtrLinkedList()
+        for _ in 0..<size {
+            for _ in 0..<100 {
+                let td = TestData()
+                let ptr = OpaquePointer(Unmanaged.passUnretained(td).toOpaque())
+                ll.push(ptr)
+            }
+            for _ in 0..<100 {
+                _ = ll.pop()
+            }
+        }
+    }
+    print("class pointer", classPointer)
+    
+    let classGenericPointer = await timeIt(iterations: i) {
+        var ll = RawLinkedList<TestData>()
+        for _ in 0..<size {
+            for _ in 0..<100 {
+                ll.push(TestData())
+            }
+            for _ in 0..<100 {
+                _ = ll.pop()
+            }
+        }
+    }
+    print("class generic pointer", classGenericPointer)
+    
+    let classGeneric = await timeIt(iterations: i) {
+        var ll = LinkedList<TestData>()
+        for _ in 0..<size {
+            for _ in 0..<100 {
+                ll.push(TestData())
+            }
+            for _ in 0..<100 {
+                _ = ll.pop()
+            }
+        }
+    }
+    print("class generic", classGeneric)
+    
+    let structPointer = await timeIt(iterations: i) {
+        var ll = PtrLinkedList()
+        for _ in 0..<size {
+            for _ in 0..<100 {
+                let ptr = UnsafeMutablePointer<TestStruct>.allocate(capacity: 1)
+                ptr.initialize(to: TestStruct())
+                let opaquePtr1 = OpaquePointer(ptr)
+                ll.push(opaquePtr1)
+            }
+            for _ in 0..<100 {
+                _ = ll.pop()
+            }
+        }
+    }
+    print("struct pointer", structPointer)
+    
+    
+    let structGenericPointer = await timeIt(iterations: i) {
+        var ll = RawLinkedList<TestStruct>()
+        for _ in 0..<size {
+            for _ in 0..<100 {
+                ll.push(TestStruct())
+            }
+            for _ in 0..<100 {
+                _ = ll.pop()
+            }
+        }
+    }
+    print("struct geenric pointer", structGenericPointer)
+    
+    let structGeneric = await timeIt(iterations: i) {
+        var ll = LinkedList<TestStruct>()
+        for _ in 0..<size {
+            for _ in 0..<100 {
+                ll.push(TestStruct())
+            }
+            for _ in 0..<100 {
+                _ = ll.pop()
+            }
+        }
+    }
+    print("struct geenric", structGeneric)
+    
+    
+    let intOptimized = await timeIt(iterations: i) {
+        var ll = IntLinkedList()
+        for _ in 0..<size {
+            for i in 0..<100 {
+                ll.push(i)
+            }
+            for _ in 0..<100 {
+                _ = ll.pop()
+            }
+        }
+    }
+    print("Int", intOptimized)
+}
 func run<T: Initializable>(_ type: T.Type) async {
     formatResult(await testSPSC(type))
     formatResult(await testMPSC(type))

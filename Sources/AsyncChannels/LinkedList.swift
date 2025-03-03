@@ -1,6 +1,6 @@
 import Foundation
 
-struct LinkedList<T> {
+public struct LinkedList<T> {
     final class Node {
         var value: T
         var next: Node?
@@ -14,9 +14,11 @@ struct LinkedList<T> {
     private var head: Node?
     private var tail: Node?
     private(set) var count: Int = 0
+    
+    public init() {}
 
     @inline(__always)
-    mutating func push(_ value: T) {
+    public mutating func push(_ value: T) {
         let node = Node(value: value)
         if head == nil {
             head = node
@@ -30,7 +32,7 @@ struct LinkedList<T> {
     }
     
     @inline(__always)
-    mutating func pop() -> T? {
+    public mutating func pop() -> T? {
         let value = head?.value
         head = head?.next
         if head == nil {

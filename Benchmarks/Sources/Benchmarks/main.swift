@@ -42,8 +42,8 @@ print()
 print("Test | Type | Execution Time(ms)")
 print("-----|------|---------------")
 
-testCoherency()
-//await testLL()
+//testCoherency()
+await testLL()
 //await run(Int.self)
 //await run(String.self)
 //await run(ValueData.self)
@@ -123,21 +123,6 @@ func testLL() async {
     let size = 100_000
     let i = 2
     
-    let classPointer = await timeIt(iterations: i) {
-        var ll = PtrLinkedList()
-        for _ in 0..<size {
-            for _ in 0..<100 {
-                let td = TestData()
-                let ptr = OpaquePointer(Unmanaged.passUnretained(td).toOpaque())
-                ll.push(ptr)
-            }
-            for _ in 0..<100 {
-                _ = ll.pop()
-            }
-        }
-    }
-    print("class pointer", classPointer)
-    
     let classGenericPointer = await timeIt(iterations: i) {
         var ll = RawLinkedList<TestData>()
         for _ in 0..<size {
@@ -163,23 +148,6 @@ func testLL() async {
         }
     }
     print("class generic", classGeneric)
-    
-    let structPointer = await timeIt(iterations: i) {
-        var ll = PtrLinkedList()
-        for _ in 0..<size {
-            for _ in 0..<100 {
-                let ptr = UnsafeMutablePointer<TestStruct>.allocate(capacity: 1)
-                ptr.initialize(to: TestStruct())
-                let opaquePtr1 = OpaquePointer(ptr)
-                ll.push(opaquePtr1)
-            }
-            for _ in 0..<100 {
-                _ = ll.pop()
-            }
-        }
-    }
-    print("struct pointer", structPointer)
-    
     
     let structGenericPointer = await timeIt(iterations: i) {
         var ll = RawLinkedList<TestStruct>()

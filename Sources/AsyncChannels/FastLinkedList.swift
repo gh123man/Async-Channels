@@ -48,9 +48,6 @@ public struct IntLinkedList {
     }
 }
 
-
-
-
 public struct PtrLinkedList {
     final class Node {
         var value: OpaquePointer

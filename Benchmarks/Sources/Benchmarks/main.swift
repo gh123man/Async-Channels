@@ -93,28 +93,28 @@ struct TestStruct {
 func testCoherency() async {
     
     
-//    let c = Channel<TestDataDeinit>(capacity: 1)
+    let c = Channel<[TestDataDeinit]>(capacity: 1)
 //    for _ in 0..<10_000_000 {
-//        let f = TestDataDeinit()
-//        await c <- f
-//        let d = await <-c
-//        print(d!.foo)
+        let f = [TestDataDeinit(), TestDataDeinit(), TestDataDeinit()]
+        await c <- f
+        let d = await <-c
+        print(d![2].foo)
 //    }
-//    print("Done with coherency")
+    print("Done with coherency")
     
-//    var l1 = RawLinkedList<String>()
-//    l1.push("foo")
-//    print(l1.pop()!)
-//    
-//    var l2 = RawLinkedList<Int>()
-//    l2.push(1)
-//    print(l2.pop()!)
-//    
-//    var l3 = RawLinkedList<TestStruct>()
-//    l3.push(TestStruct())
-//    print(l3.pop()!.foo)
-//    
-//    
+    var l1 = RawLinkedList<String>()
+    l1.push("foo")
+    print(l1.pop()!)
+    
+    var l2 = RawLinkedList<Int>()
+    l2.push(1)
+    print(l2.pop()!)
+    
+    var l3 = RawLinkedList<TestStruct>()
+    l3.push(TestStruct())
+    print(l3.pop()!.foo)
+    
+    
 //    var d = ["foo", "bar"]
 //    var l4 = RawLinkedList<[String]>()
 //    l4.push(d)
@@ -131,7 +131,7 @@ func testCoherency() async {
 
 func testLL() async {
     let size = 100_000
-    let i = 2
+    let i = 4
     
     let classGenericPointer = await timeIt(iterations: i) {
         var ll = RawLinkedList<TestData>()
@@ -170,7 +170,7 @@ func testLL() async {
             }
         }
     }
-    print("struct geenric pointer", structGenericPointer)
+    print("struct generic pointer", structGenericPointer)
     
     let structGeneric = await timeIt(iterations: i) {
         var ll = LinkedList<TestStruct>()
@@ -183,7 +183,7 @@ func testLL() async {
             }
         }
     }
-    print("struct geenric", structGeneric)
+    print("struct generic", structGeneric)
     
     
     let intOptimized = await timeIt(iterations: i) {

@@ -22,6 +22,8 @@ prefix operator <-
     return await chan.receive()
 }
 
+@inline(__always)
+@inlinable
 func ptr<T>(_ value: T) -> UnsafeRawPointer {
     if T.self is AnyObject.Type {
         return UnsafeRawPointer(Unmanaged.passRetained(value as AnyObject).toOpaque())
@@ -31,6 +33,8 @@ func ptr<T>(_ value: T) -> UnsafeRawPointer {
     return UnsafeRawPointer(ptr)
 }
 
+@inline(__always)
+@inlinable
 func value<T>(_ p: UnsafeRawPointer?) -> T? {
     if T.self is AnyObject.Type {
         guard let p = p else {
@@ -44,6 +48,7 @@ func value<T>(_ p: UnsafeRawPointer?) -> T? {
 
 public final class Channel<T: Sendable>: @unchecked Sendable {
     
+    @usableFromInline
     let chanInternal: ChannelInternal
     
     public init(capacity: Int = 0) {
@@ -54,18 +59,26 @@ public final class Channel<T: Sendable>: @unchecked Sendable {
         chanInternal.isClosed
     }
     
+    @inline(__always)
+    @inlinable
     public func send(_ value: T) async {
         await chanInternal.send(ptr(value))
     }
     
+    @inline(__always)
+    @inlinable
     public func receive() async -> T? {
         return value(await chanInternal.receive())
     }
     
+    @inline(__always)
+    @inlinable
     public func syncSend(_ value: T) -> Bool {
         chanInternal.syncSend(ptr(value))
     }
     
+    @inline(__always)
+    @inlinable
     public func syncReceive() -> T? {
         return value(chanInternal.syncReceive())
         

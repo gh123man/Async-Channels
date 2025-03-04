@@ -50,10 +50,10 @@ public struct IntLinkedList {
 
 public struct PtrLinkedList {
     final class Node {
-        var value: OpaquePointer
+        var value: UnsafeRawPointer
         var next: Node?
 
-        init(value: OpaquePointer) {
+        init(value: UnsafeRawPointer) {
             self.value = value
         }
     }
@@ -66,7 +66,7 @@ public struct PtrLinkedList {
     private(set) var count: Int = 0
 
     @inline(__always)
-    public mutating func push(_ value: OpaquePointer) {
+    public mutating func push(_ value: UnsafeRawPointer) {
         let node = Node(value: value)
         if head == nil {
             head = node
@@ -80,7 +80,7 @@ public struct PtrLinkedList {
     }
     
     @inline(__always)
-    public mutating func pop() -> OpaquePointer? {
+    public mutating func pop() -> UnsafeRawPointer? {
         let value = head?.value
         head = head?.next
         if head == nil {
@@ -94,7 +94,8 @@ public struct PtrLinkedList {
 
 public struct RawLinkedList<T> {
     
-    private var data = PtrLinkedList()
+    @usableFromInline
+    var data = PtrLinkedList()
     var count: Int {
         return data.count
     }
@@ -108,27 +109,18 @@ public struct RawLinkedList<T> {
     
 }
 
-extension RawLinkedList where T: AnyObject {
-    public mutating func push(_ value: T) {
-        data.push(OpaquePointer(Unmanaged.passRetained(value).toOpaque()))
-    }
-    
-    public mutating func pop() -> T? {
-        let p = data.pop()
-        return Unmanaged<T>.fromOpaque(UnsafeRawPointer(p)!).takeRetainedValue()
-    }
-}
 
 extension RawLinkedList where T: Any {
+    @inlinable
+    @inline(__always)
     public mutating func push(_ value: T) {
-        let ptr = UnsafeMutablePointer<T>.allocate(capacity: 1)
-        ptr.initialize(to: value)
-        let optr = OpaquePointer(ptr)
-        data.push(optr)
+        data.push(ptr(value))
     }
     
+    @inlinable
+    @inline(__always)
     public mutating func pop() -> T? {
-        return UnsafeMutablePointer<T>(data.pop())?.pointee
+        return value(data.pop())
     }
 }
 

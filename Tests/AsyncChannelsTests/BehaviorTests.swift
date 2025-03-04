@@ -10,7 +10,7 @@ func assertChanRx<T: Equatable>(_ channel: Channel<T>, _ expecting: T) async {
 }
 
 @Suite(.timeLimit(.minutes(1)))
-final class AsyncTest {
+final class BehaviorTests {
     
     
     // MARK: Tests

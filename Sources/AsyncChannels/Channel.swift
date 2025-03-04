@@ -25,7 +25,54 @@ prefix operator <-
 
 extension UnsafeRawPointer: @unchecked Sendable {}
 
+func ptr<T>(_ value: T) -> UnsafeRawPointer {
+    if T.self is AnyObject.Type {
+        if let value = value as? AnyObject {
+            return UnsafeRawPointer(Unmanaged.passRetained(value).toOpaque())
+        }
+    }
+    let ptr = UnsafeMutablePointer<T>.allocate(capacity: 1)
+    ptr.initialize(to: value)
+    return UnsafeRawPointer(ptr)
+}
+
+func value<T>(_ p: UnsafeRawPointer?) -> T? {
+    if T.self is AnyObject.Type {
+        guard let p = p else {
+            return nil
+        }
+        return Unmanaged<AnyObject>.fromOpaque(p).takeRetainedValue() as? T
+    }
+    defer { p?.deallocate() }
+    return p?.assumingMemoryBound(to: T.self).pointee
+}
+
 public final class Channel<T: Sendable>: @unchecked Sendable {
+    
+    let chanInternal: ChannelInternal
+    
+    public init(capacity: Int = 0) {
+        self.chanInternal = ChannelInternal(capacity: capacity)
+    }
+    
+    var isClosed: Bool {
+        chanInternal.isClosed
+    }
+    
+    public func send(_ value: T) async {
+        await chanInternal.send(ptr(value))
+    }
+    
+    public func receive() async -> T? {
+        return value(await chanInternal.receive())
+    }
+    
+    public func close() {
+        chanInternal.close()
+    }
+}
+
+public final class ChannelInternal: @unchecked Sendable {
     private var mutex = FastLock()
     private let capacity: Int
     private var closed = false
@@ -47,37 +94,13 @@ public final class Channel<T: Sendable>: @unchecked Sendable {
         return closed
     }
     
-    @inlinable
-    @inline(__always)
-    func ptr(_ value: T) -> UnsafeRawPointer {
-        if T.self is AnyObject.Type {
-            if let value = value as? AnyObject {
-                return UnsafeRawPointer(Unmanaged.passRetained(value).toOpaque())
-            }
-        }
-        let ptr = UnsafeMutablePointer<T>.allocate(capacity: 1)
-        ptr.initialize(to: value)
-        return UnsafeRawPointer(ptr)
-    }
     
-    @inlinable
-    @inline(__always)
-    func value(_ p: UnsafeRawPointer?) -> T? {
-        if T.self is AnyObject.Type {
-            guard let p = p else {
-                return nil
-            }
-            return Unmanaged<AnyObject>.fromOpaque(p).takeRetainedValue() as? T
-        }
-        defer { p?.deallocate() }
-        return p?.assumingMemoryBound(to: T.self).pointee
-    }
     
-    func receiveOrListen(_ sema: SelectSignal) -> T? {
+    func receiveOrListen(_ sema: SelectSignal) -> UnsafeRawPointer? {
         mutex.lock()
         
-        if let val = nonBlockingReceive() {
-            return value(val)
+        if let p = nonBlockingReceive() {
+            return p
         }
         
         if closed {
@@ -90,8 +113,7 @@ public final class Channel<T: Sendable>: @unchecked Sendable {
         return nil
     }
     
-    func sendOrListen(_ sema: SelectSignal, value: T) -> Bool {
-        let p = ptr(value)
+    func sendOrListen(_ sema: SelectSignal, p: UnsafeRawPointer) -> Bool {
         mutex.lock()
         
         if nonBlockingSend(p) {
@@ -128,9 +150,8 @@ public final class Channel<T: Sendable>: @unchecked Sendable {
     /// Sends data on the channel. This function will suspend until a receiver is ready or buffer space is avalible.
     /// - Parameter value: The data to send.
     @inline(__always)
-    public func send(_ value: T) async {
+    public func send(_ p: UnsafeRawPointer) async {
         mutex.lock()
-        let p = ptr(value)
         
         if nonBlockingSend(p) {
             return
@@ -148,8 +169,7 @@ public final class Channel<T: Sendable>: @unchecked Sendable {
     /// A fatal error will be triggered if you attpend to send on a closed channel.
     /// - Parameter value: The input data.
     @inline(__always)
-    public func syncSend(_ value: T) -> Bool {
-        let p = ptr(value)
+    public func syncSend(_ p: UnsafeRawPointer) -> Bool {
         mutex.lock()
         if nonBlockingSend(p) {
             return true
@@ -188,11 +208,11 @@ public final class Channel<T: Sendable>: @unchecked Sendable {
     /// This functionw will return `nil` when the channel is closed after all buffered data is read.
     /// - Returns: data or nil.
     @inline(__always)
-    public func receive() async -> T? {
+    public func receive() async -> UnsafeRawPointer? {
         mutex.lock()
 
         if let p = nonBlockingReceive() {
-            return value(p)
+            return p
         }
         
         if closed {
@@ -206,7 +226,7 @@ public final class Channel<T: Sendable>: @unchecked Sendable {
             mutex.unlock()
             waiter?.signal()
         }
-        return value(p)
+        return p
     }
     
     
@@ -214,10 +234,10 @@ public final class Channel<T: Sendable>: @unchecked Sendable {
     /// This function will never block or suspend.
     /// - Returns: The data or nil
     @inline(__always)
-    public func syncReceive() -> T? {
+    public func syncReceive() -> UnsafeRawPointer? {
         mutex.lock()
-        if let val = nonBlockingReceive() {
-            return value(val)
+        if let p = nonBlockingReceive() {
+            return p
         }
         mutex.unlock()
         return nil

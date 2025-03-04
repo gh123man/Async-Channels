@@ -17,13 +17,13 @@ protocol SelectProtocol {
 }
 
 @usableFromInline
-struct ReceiveHandler<T: Sendable>: SelectProtocol {
+struct ReceiveHandler: SelectProtocol {
     
-    private var chan: Channel<T>
-    private let outFunc: (T?) async -> ()
+    private var chan: ChannelInternal
+    private let outFunc: (UnsafeRawPointer?) async -> ()
     
     @usableFromInline
-    init(chan: Channel<T>, outFunc: @escaping (T?) async -> ()) {
+    init(chan: ChannelInternal, outFunc: @escaping (UnsafeRawPointer?) async -> ()) {
         self.chan = chan
         self.outFunc = outFunc
     }
@@ -59,13 +59,13 @@ struct NoneHandler: SelectProtocol {
 }
 
 @usableFromInline
-struct SendHandler<T: Sendable>: SelectProtocol {
-    private var chan: Channel<T>
-    private let val: T
+struct SendHandler: SelectProtocol {
+    private var chan: ChannelInternal
+    private let val: UnsafeRawPointer
     private let onSend: () async -> ()
     
     @usableFromInline
-    init(chan: Channel<T>, val: T, onSend: @escaping () async -> ()) {
+    init(chan: ChannelInternal, val: UnsafeRawPointer, onSend: @escaping () async -> ()) {
         self.chan = chan
         self.val = val
         self.onSend = onSend
@@ -73,7 +73,7 @@ struct SendHandler<T: Sendable>: SelectProtocol {
     
     @usableFromInline
     func handle(_ sm: SelectSignal) async -> Bool {
-        if chan.sendOrListen(sm, value: val) {
+        if chan.sendOrListen(sm, p: val) {
             await onSend()
             return true
         }
@@ -128,50 +128,34 @@ public func select(@SelectCollector cases: () -> ([SelectHandler])) async {
     }
 }
 
-@inlinable
-@inline(__always)
 public func receive<T>(_ chan: Channel<T>, _ outFunc: @escaping (T?) async -> ()) -> [SelectHandler] {
-    return [SelectHandler(inner: ReceiveHandler(chan: chan, outFunc: outFunc))]
+    return [SelectHandler(inner: ReceiveHandler(chan: chan.chanInternal, outFunc: { ptr($0) }))]
 }
 
-@inlinable
-@inline(__always)
 public func receive<T>(_ chan: Channel<T>, _ outFunc: @escaping () async -> ()) -> [SelectHandler] {
-    return [SelectHandler(inner: ReceiveHandler(chan: chan, outFunc: { _ in await outFunc() }))]
+    return [SelectHandler(inner: ReceiveHandler(chan: chan.chanInternal, outFunc: { _ in await outFunc() }))]
 }
 
-@inlinable
-@inline(__always)
 public func receive<T>(_ chan: Channel<T>) -> [SelectHandler] {
-    return [SelectHandler(inner: ReceiveHandler(chan: chan, outFunc: { _ in }))]
+    return [SelectHandler(inner: ReceiveHandler(chan: chan.chanInternal, outFunc: { _ in }))]
 }
 
-@inlinable
-@inline(__always)
 public func send<T>(_ val: T, to chan: Channel<T>) -> [SelectHandler] {
-    return [SelectHandler(inner: SendHandler(chan: chan, val: val, onSend: {}))]
+    return [SelectHandler(inner: SendHandler(chan: chan.chanInternal, val: ptr(val), onSend: {}))]
 }
 
-@inlinable
-@inline(__always)
 public func send<T>(_ val: T, to chan: Channel<T>, _ onSend: @escaping () async -> ()) -> [SelectHandler] {
-    return [SelectHandler(inner: SendHandler(chan: chan, val: val, onSend: onSend))]
+    return [SelectHandler(inner: SendHandler(chan: chan.chanInternal, val: ptr(val), onSend: onSend))]
 }
 
-@inlinable
-@inline(__always)
 public func none(handler: @escaping () async -> ()) -> [SelectHandler] {
     return [SelectHandler(inner: NoneHandler(handler: handler))]
 }
 
-@inlinable
-@inline(__always)
 public func any<S, T>(_ seq: S, @SelectCollector cases: (T) -> ([SelectHandler])) -> [SelectHandler] where S: Sequence, S.Element == T {
     return seq.flatMap { cases($0) }
 }
 
-@inlinable
-@inline(__always)
 public func any<T>(_ elements: T..., @SelectCollector cases: (T) -> ([SelectHandler])) -> [SelectHandler] {
     return elements.flatMap { cases($0) }
 }

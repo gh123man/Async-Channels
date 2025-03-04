@@ -42,17 +42,17 @@ print()
 print("Test | Type | Execution Time(ms)")
 print("-----|------|---------------")
 
-//testCoherency()
-await testLL()
-//await run(Int.self)
-//await run(String.self)
-//await run(ValueData.self)
-//await run(RefData.self)
-//
-//await runAsyncAlg(Int.self)
-//await runAsyncAlg(String.self)
-//await runAsyncAlg(ValueData.self)
-//await runAsyncAlg(RefData.self)
+//await testCoherency()
+//await testLL()
+await run(Int.self)
+await run(String.self)
+await run(ValueData.self)
+await run(RefData.self)
+
+await runAsyncAlg(Int.self)
+await runAsyncAlg(String.self)
+await runAsyncAlg(ValueData.self)
+await runAsyncAlg(RefData.self)
 
 class TestData {
     let foo: String
@@ -64,7 +64,7 @@ class TestData {
     }
 }
 
-class TestDataDeinit {
+class TestDataDeinit: @unchecked Sendable {
     let foo: String
     let bar: Int
     
@@ -90,32 +90,42 @@ struct TestStruct {
     }
 }
 
-func testCoherency() {
-    
-    var l1 = RawLinkedList<String>()
-    l1.push("foo")
-    print(l1.pop()!)
-    
-    var l2 = RawLinkedList<Int>()
-    l2.push(1)
-    print(l2.pop()!)
-    
-    var l3 = RawLinkedList<TestStruct>()
-    l3.push(TestStruct())
-    print(l3.pop()!.foo)
+func testCoherency() async {
     
     
-    var d = ["foo", "bar"]
-    var l4 = RawLinkedList<[String]>()
-    l4.push(d)
-    d[0] = "baz"
-    print(l4.pop()!)
-    print(d)
+//    let c = Channel<TestDataDeinit>(capacity: 1)
+//    for _ in 0..<10_000_000 {
+//        let f = TestDataDeinit()
+//        await c <- f
+//        let d = await <-c
+//        print(d!.foo)
+//    }
+//    print("Done with coherency")
     
-    var l5 = RawLinkedList<TestDataDeinit>()
-    l5.push(TestDataDeinit())
-    let retained = l5.pop()!
-    print(retained.foo)
+//    var l1 = RawLinkedList<String>()
+//    l1.push("foo")
+//    print(l1.pop()!)
+//    
+//    var l2 = RawLinkedList<Int>()
+//    l2.push(1)
+//    print(l2.pop()!)
+//    
+//    var l3 = RawLinkedList<TestStruct>()
+//    l3.push(TestStruct())
+//    print(l3.pop()!.foo)
+//    
+//    
+//    var d = ["foo", "bar"]
+//    var l4 = RawLinkedList<[String]>()
+//    l4.push(d)
+//    d[0] = "baz"
+//    print(l4.pop()!)
+//    print(d)
+//    
+//    var l5 = RawLinkedList<TestDataDeinit>()
+//    l5.push(TestDataDeinit())
+//    let retained = l5.pop()!
+//    print(retained.foo)
 }
 
 
@@ -316,29 +326,28 @@ func testAsyncAlgMPSCWriteContention<T: Initializable>(_ type: T.Type, producers
 func runMPMC<T: Initializable>(_ type: T.Type, producers: Int, consumers: Int, writes: Int, buffer: Int = 0) async -> Double {
     return await timeIt(iterations: iterations) {
         let a = Channel<T>(capacity: buffer)
-        let writeWg = WaitGroup(count: producers)
-        let readWg = WaitGroup(count: consumers)
         
-        for _ in 0..<producers {
-            Task {
-                for _ in 0 ..< writes / producers {
-                    await a <- T()
+        async let writeGroup: () = withTaskGroup(of: Void.self) { group in
+            for _ in 0..<producers {
+                group.addTask {
+                    for _ in 0 ..< writes / producers {
+                        await a <- T()
+                    }
                 }
-                await writeWg.done()
             }
         }
         
-        for _ in 0..<consumers {
-            Task {
-                for await _ in a {}
-                await readWg.done()
+        async let readGroup: () = withTaskGroup(of: Void.self) { group in
+            for _ in 0..<consumers {
+                group.addTask {
+                    for await _ in a {}
+                }
             }
+            
         }
-        
-        await writeWg.wait()
+        await writeGroup
         a.close()
-        await readWg.wait()
-        
+        await readGroup
     }
 }
 

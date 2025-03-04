@@ -23,15 +23,15 @@ prefix operator <-
     return await chan.receive()
 }
 
-extension OpaquePointer: @unchecked Sendable {}
+extension UnsafeRawPointer: @unchecked Sendable {}
 
 public final class Channel<T: Sendable>: @unchecked Sendable {
     private var mutex = FastLock()
     private let capacity: Int
     private var closed = false
-    private var buffer: Deque<OpaquePointer>
-    private var sendQueue = Deque<(OpaquePointer, UnsafeContinuation<Void, Never>)>()
-    private var recvQueue = Deque<UnsafeContinuation<OpaquePointer?, Never>>()
+    private var buffer: Deque<UnsafeRawPointer>
+    private var sendQueue = Deque<(UnsafeRawPointer, UnsafeContinuation<Void, Never>)>()
+    private var recvQueue = Deque<UnsafeContinuation<UnsafeRawPointer?, Never>>()
 
     public init(capacity: Int = 0) {
         self.capacity = capacity
@@ -45,6 +45,32 @@ public final class Channel<T: Sendable>: @unchecked Sendable {
         mutex.lock()
         defer { mutex.unlock() }
         return closed
+    }
+    
+    @inlinable
+    @inline(__always)
+    func ptr(_ value: T) -> UnsafeRawPointer {
+        if T.self is AnyObject.Type {
+            if let value = value as? AnyObject {
+                return UnsafeRawPointer(Unmanaged.passRetained(value).toOpaque())
+            }
+        }
+        let ptr = UnsafeMutablePointer<T>.allocate(capacity: 1)
+        ptr.initialize(to: value)
+        return UnsafeRawPointer(ptr)
+    }
+    
+    @inlinable
+    @inline(__always)
+    func value(_ p: UnsafeRawPointer?) -> T? {
+        if T.self is AnyObject.Type {
+            guard let p = p else {
+                return nil
+            }
+            return Unmanaged<AnyObject>.fromOpaque(p).takeRetainedValue() as? T
+        }
+        defer { p?.deallocate() }
+        return p?.assumingMemoryBound(to: T.self).pointee
     }
     
     func receiveOrListen(_ sema: SelectSignal) -> T? {
@@ -78,13 +104,13 @@ public final class Channel<T: Sendable>: @unchecked Sendable {
     }
     
     @inline(__always)
-    private func nonBlockingSend(_ p: OpaquePointer) -> Bool {
+    private func nonBlockingSend(_ p: UnsafeRawPointer) -> Bool {
         if closed {
             fatalError("Cannot send on a closed channel")
         }
         
         if !recvQueue.isEmpty {
-            let r = recvQueue.pop()!
+            let r = recvQueue.popFirst()!
             mutex.unlock()
             r.resume(returning: p)
             return true
@@ -133,7 +159,7 @@ public final class Channel<T: Sendable>: @unchecked Sendable {
     }
     
     @inline(__always)
-    private func nonBlockingReceive() -> OpaquePointer? {
+    private func nonBlockingReceive() -> UnsafeRawPointer? {
         if buffer.isEmpty {
             if !sendQueue.isEmpty {
                 let (p, continuation) = sendQueue.popFirst()!
@@ -165,8 +191,8 @@ public final class Channel<T: Sendable>: @unchecked Sendable {
     public func receive() async -> T? {
         mutex.lock()
 
-        if let val = nonBlockingReceive() {
-            return value(val)
+        if let p = nonBlockingReceive() {
+            return value(p)
         }
         
         if closed {
@@ -212,36 +238,3 @@ public final class Channel<T: Sendable>: @unchecked Sendable {
     }
 }
 
-
-extension Channel where T: AnyObject {
-    @inlinable
-    @inline(__always)
-    public func ptr(_ value: T) -> OpaquePointer {
-        return OpaquePointer(Unmanaged.passRetained(value).toOpaque())
-    }
-    
-    @inlinable
-    @inline(__always)
-    func value(_ p: OpaquePointer) -> T? {
-        return Unmanaged<T>.fromOpaque(UnsafeRawPointer(p)!).takeRetainedValue()
-    }
-}
-
-
-extension Channel where T: Any {
-    @inlinable
-    @inline(__always)
-    func ptr(_ value: T) -> OpaquePointer {
-        let ptr = UnsafeMutablePointer<T>.allocate(capacity: 1)
-        ptr.initialize(to: value)
-        let optr = OpaquePointer(ptr)
-        return optr
-    }
-    
-    @inlinable
-    @inline(__always)
-    func value(_ p: OpaquePointer?) -> T? {
-        defer { UnsafeRawPointer(p)?.deallocate() }
-        return UnsafeMutablePointer<T>(p)?.pointee
-    }
-}

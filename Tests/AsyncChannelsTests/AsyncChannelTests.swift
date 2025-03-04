@@ -146,8 +146,12 @@ final class AsyncTest {
         }
         
         await select {
-            receive(d) { await result <- $0! }
-            receive(c) { await result <- $0! }
+            receive(d) {
+                await result <- $0!
+            }
+            receive(c) {
+                await result <- $0!
+            }
         }
         
         await select {
@@ -654,34 +658,6 @@ final class AsyncTest {
         }
         
         #expect(sum == 100)
-    }
-    
-    @Test func waitGrouptest() async {
-        
-        let wg = WaitGroup()
-        let signal = Channel<Bool>()
-        let done = Channel<Bool>()
-        
-        // Task that drains the signal channel
-        Task {
-            for await _ in signal { }
-            await done <- true
-        }
-        
-        // 100 workers that write to the signal channel
-        for _ in 0..<100 {
-            await wg.add(1)
-            Task {
-                await signal <- true
-                await wg.done()
-            }
-        }
-        // When all workers are done - signal is drained, so wg will be done.
-        await wg.wait()
-        
-        // Closing the signal channel means it's empty, so done is signaled.
-        signal.close()
-        await <-done
     }
     
     @Test func Multiplex() async {

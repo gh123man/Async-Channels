@@ -129,7 +129,7 @@ public func select(@SelectCollector cases: () -> ([SelectHandler])) async {
 }
 
 public func receive<T>(_ chan: Channel<T>, _ outFunc: @escaping (T?) async -> ()) -> [SelectHandler] {
-    return [SelectHandler(inner: ReceiveHandler(chan: chan.chanInternal, outFunc: { ptr($0) }))]
+    return [SelectHandler(inner: ReceiveHandler(chan: chan.chanInternal, outFunc: { await outFunc(value($0)) }))]
 }
 
 public func receive<T>(_ chan: Channel<T>, _ outFunc: @escaping () async -> ()) -> [SelectHandler] {

@@ -42,9 +42,9 @@ print()
 print("Test | Type | Execution Time(ms)")
 print("-----|------|---------------")
 
-await run(Int.self)
-await run(String.self)
-await run(ValueData.self)
+//await run(Int.self)
+//await run(String.self)
+//await run(ValueData.self)
 await run(RefData.self)
 
 await runAsyncAlg(Int.self)
@@ -54,11 +54,11 @@ await runAsyncAlg(RefData.self)
 
 
 func run<T: Initializable>(_ type: T.Type) async {
-    formatResult(await testSPSC(type))
-    formatResult(await testMPSC(type))
-    formatResult(await testSPMC(type))
-    formatResult(await testMPMC(type))
-    formatResult(await testMPSCWriteContention(type))
+//    formatResult(await testSPSC(type))
+//    formatResult(await testMPSC(type))
+//    formatResult(await testSPMC(type))
+//    formatResult(await testMPMC(type))
+//    formatResult(await testMPSCWriteContention(type))
 
     formatResult(await testSPSCBuffered(type))
     formatResult(await testMPSCBuffered(type))
@@ -180,29 +180,28 @@ func testAsyncAlgMPSCWriteContention<T: Initializable>(_ type: T.Type, producers
 func runMPMC<T: Initializable>(_ type: T.Type, producers: Int, consumers: Int, writes: Int, buffer: Int = 0) async -> Double {
     return await timeIt(iterations: iterations) {
         let a = Channel<T>(capacity: buffer)
-        let writeWg = WaitGroup(count: producers)
-        let readWg = WaitGroup(count: consumers)
         
-        for _ in 0..<producers {
-            Task {
-                for _ in 0 ..< writes / producers {
-                    await a <- T()
+        async let writeGroup: () = withTaskGroup(of: Void.self) { group in
+            for _ in 0..<producers {
+                group.addTask {
+                    for _ in 0 ..< writes / producers {
+                        await a <- T()
+                    }
                 }
-                await writeWg.done()
             }
         }
         
-        for _ in 0..<consumers {
-            Task {
-                for await _ in a {}
-                await readWg.done()
+        async let readGroup: () = withTaskGroup(of: Void.self) { group in
+            for _ in 0..<consumers {
+                group.addTask {
+                    for await _ in a {}
+                }
             }
+            
         }
-        
-        await writeWg.wait()
+        await writeGroup
         a.close()
-        await readWg.wait()
-        
+        await readGroup
     }
 }
 
@@ -258,28 +257,26 @@ func testMultiSelect<T: Initializable>(_ type: T.Type) async -> (String, String,
 func runMPMCAsyncAlg<T: Initializable>(_ type: T.Type, producers: Int, consumers: Int, writes: Int, buffer: Int = 0) async -> Double {
     return await timeIt(iterations: iterations) {
         let a = AsyncChannel<T>()
-        let writeWg = WaitGroup(count: producers)
-        let readWg = WaitGroup(count: consumers)
         
-        for _ in 0..<producers {
-            Task {
+        async let writeGroup: () = withTaskGroup(of: Void.self) { group in
+            group.addTask {
                 for _ in 0 ..< writes / producers {
                     await a.send(T())
                 }
-                await writeWg.done()
             }
         }
         
-        for _ in 0..<consumers {
-            Task {
-                for await _ in a {}
-                await readWg.done()
+        async let readGroup: () = withTaskGroup(of: Void.self) { group in
+            for _ in 0..<consumers {
+                group.addTask {
+                    for await _ in a {}
+                }
             }
         }
         
-        await writeWg.wait()
+        await writeGroup
         a.finish()
-        await readWg.wait()
+        await readGroup
     }
 }
 

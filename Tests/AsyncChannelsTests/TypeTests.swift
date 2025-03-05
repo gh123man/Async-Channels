@@ -12,6 +12,45 @@ final class TypeTests {
         #expect(r == val)
     }
     
+    @Test func lifetimeRefType() async {
+        final class RefType: Sendable {
+            let s = "string foo bar"
+            let i = 1
+            let f = 3.12
+            
+            deinit {
+                print("Deinit")
+                print(s)
+            }
+        }
+        let c = Channel<RefType>(capacity: 10)
+        
+        await {
+            await c <- RefType()
+        }()
+        
+        await {
+            print((await <-c)!.s)
+        }()
+    }
+    
+    @Test func lifetimeValType() async {
+        struct ValType: Sendable {
+            let s = "string foo bar"
+            let i = 1
+            let f = 3.12
+        }
+        let c = Channel<ValType>(capacity: 10)
+        
+        await {
+            await c <- ValType()
+        }()
+        
+        await {
+            print((await <-c)!.s)
+        }()
+    }
+    
     @Test func allTypes() async {
         // Primitives
         await assertType(42)

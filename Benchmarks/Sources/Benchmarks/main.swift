@@ -42,9 +42,9 @@ print()
 print("Test | Type | Execution Time(ms)")
 print("-----|------|---------------")
 
-//await run(Int.self)
-//await run(String.self)
-//await run(ValueData.self)
+await run(Int.self)
+await run(String.self)
+await run(ValueData.self)
 await run(RefData.self)
 
 await runAsyncAlg(Int.self)
@@ -54,11 +54,11 @@ await runAsyncAlg(RefData.self)
 
 
 func run<T: Initializable>(_ type: T.Type) async {
-//    formatResult(await testSPSC(type))
-//    formatResult(await testMPSC(type))
-//    formatResult(await testSPMC(type))
-//    formatResult(await testMPMC(type))
-//    formatResult(await testMPSCWriteContention(type))
+    formatResult(await testSPSC(type))
+    formatResult(await testMPSC(type))
+    formatResult(await testSPMC(type))
+    formatResult(await testMPMC(type))
+    formatResult(await testMPSCWriteContention(type))
 
     formatResult(await testSPSCBuffered(type))
     formatResult(await testMPSCBuffered(type))

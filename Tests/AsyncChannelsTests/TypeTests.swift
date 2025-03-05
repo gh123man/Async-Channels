@@ -51,6 +51,24 @@ final class TypeTests {
         }()
     }
     
+    @Test func lifetimeListCOW() async {
+        let c = Channel<[Sendable]>(capacity: 10)
+        var val: [Sendable] = ["abc", 1, 3.14]
+        await {
+            await c <- val
+        }()
+        val.append("foo")
+        
+        await {
+            let v = (await <-c)!
+            print(v[0])
+            print(v[1])
+            print(v[2])
+            #expect(v.count == 3)
+            print(val[3])
+        }()
+    }
+    
     @Test func allTypes() async {
         // Primitives
         await assertType(42)

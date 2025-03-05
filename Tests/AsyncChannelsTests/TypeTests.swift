@@ -18,6 +18,7 @@ final class TypeTests {
         await assertType(3.14)
         await assertType(true)
         await assertType("Hello")
+        await assertType(String(repeating: "Foo Bar ", count: 10000))
 
         // Tuples
         await {

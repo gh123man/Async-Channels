@@ -78,8 +78,6 @@ class TestDataDeinit: @unchecked Sendable {
     }
 }
 
-
-
 struct TestStruct {
     var foo: String
     var bar: Int
@@ -90,115 +88,6 @@ struct TestStruct {
     }
 }
 
-func testCoherency() async {
-    
-    
-    let c = Channel<[TestDataDeinit]>(capacity: 1)
-//    for _ in 0..<10_000_000 {
-        let f = [TestDataDeinit(), TestDataDeinit(), TestDataDeinit()]
-        await c <- f
-        let d = await <-c
-        print(d![2].foo)
-//    }
-    print("Done with coherency")
-    
-    var l1 = RawLinkedList<String>()
-    l1.push("foo")
-    print(l1.pop()!)
-    
-    var l2 = RawLinkedList<Int>()
-    l2.push(1)
-    print(l2.pop()!)
-    
-    var l3 = RawLinkedList<TestStruct>()
-    l3.push(TestStruct())
-    print(l3.pop()!.foo)
-    
-    
-//    var d = ["foo", "bar"]
-//    var l4 = RawLinkedList<[String]>()
-//    l4.push(d)
-//    d[0] = "baz"
-//    print(l4.pop()!)
-//    print(d)
-//    
-//    var l5 = RawLinkedList<TestDataDeinit>()
-//    l5.push(TestDataDeinit())
-//    let retained = l5.pop()!
-//    print(retained.foo)
-}
-
-
-func testLL() async {
-    let size = 100_000
-    let i = 4
-    
-    let classGenericPointer = await timeIt(iterations: i) {
-        var ll = RawLinkedList<TestData>()
-        for _ in 0..<size {
-            for _ in 0..<100 {
-                ll.push(TestData())
-            }
-            for _ in 0..<100 {
-                _ = ll.pop()
-            }
-        }
-    }
-    print("class generic pointer", classGenericPointer)
-    
-    let classGeneric = await timeIt(iterations: i) {
-        var ll = LinkedList<TestData>()
-        for _ in 0..<size {
-            for _ in 0..<100 {
-                ll.push(TestData())
-            }
-            for _ in 0..<100 {
-                _ = ll.pop()
-            }
-        }
-    }
-    print("class generic", classGeneric)
-    
-    let structGenericPointer = await timeIt(iterations: i) {
-        var ll = RawLinkedList<TestStruct>()
-        for _ in 0..<size {
-            for _ in 0..<100 {
-                ll.push(TestStruct())
-            }
-            for _ in 0..<100 {
-                _ = ll.pop()
-            }
-        }
-    }
-    print("struct generic pointer", structGenericPointer)
-    
-    let structGeneric = await timeIt(iterations: i) {
-        var ll = LinkedList<TestStruct>()
-        for _ in 0..<size {
-            for _ in 0..<100 {
-                ll.push(TestStruct())
-            }
-            for _ in 0..<100 {
-                _ = ll.pop()
-            }
-        }
-    }
-    print("struct generic", structGeneric)
-    
-    
-    let intOptimized = await timeIt(iterations: i) {
-        var ll = IntLinkedList()
-        for _ in 0..<size {
-            for i in 0..<100 {
-                ll.push(i)
-            }
-            for _ in 0..<100 {
-                _ = ll.pop()
-            }
-        }
-    }
-    print("Int", intOptimized)
-}
 func run<T: Initializable>(_ type: T.Type) async {
     formatResult(await testSPSC(type))
     formatResult(await testMPSC(type))

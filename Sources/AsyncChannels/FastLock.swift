@@ -2,16 +2,27 @@ import Foundation
 
 #if canImport(Darwin)
 class FastLock {
-    private var spinlock = OSSpinLock()
-
-    @inline(__always)
-    func lock() {
-        OSSpinLockLock(&spinlock)
+    let unfairLock = {
+        let l = UnsafeMutablePointer<os_unfair_lock>.allocate(capacity: 1)
+        l.initialize(to: os_unfair_lock())
+        return l
+    }()
+    
+    deinit {
+        unfairLock.deinitialize(count: 1)
+        unfairLock.deallocate()
     }
 
+    @inlinable
+    @inline(__always)
+    func lock() {
+        os_unfair_lock_lock(unfairLock)
+    }
+   
+    @inlinable
     @inline(__always)
     func unlock() {
-        OSSpinLockUnlock(&spinlock)
+        os_unfair_lock_unlock(unfairLock)
     }
 }
 

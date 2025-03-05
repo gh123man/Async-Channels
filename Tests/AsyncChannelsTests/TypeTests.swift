@@ -70,16 +70,16 @@ final class TypeTests {
         }
         await assertType(MyClass(x: 5))
 
-//        // Actors
-//        actor MyActor: Sendable {
-//            let value: Int
-//            init(value: Int) { self.value = value }
-//        }
-//        let actorInstance = MyActor(value: 10)
-//        await assertType(actorInstance)
-//
-//        // Metatypes
-//        await assertType(Int.self)
-//        await assertType(MyStruct.self)
+        // Actors
+        actor MyActor: Sendable, Equatable {
+            static func == (lhs: MyActor, rhs: MyActor) -> Bool {
+                lhs.value == rhs.value
+            }
+            
+            let value: Int
+            init(value: Int) { self.value = value }
+        }
+        let actorInstance = MyActor(value: 10)
+        await assertType(actorInstance)
     }
 }

@@ -9,14 +9,17 @@ class FastLock {
     }()
     
     deinit {
+        unfairLock.deinitialize(count: 1)
         unfairLock.deallocate()
     }
 
+    @inlinable
     @inline(__always)
     func lock() {
         os_unfair_lock_lock(unfairLock)
     }
    
+    @inlinable
     @inline(__always)
     func unlock() {
         os_unfair_lock_unlock(unfairLock)
@@ -37,11 +40,13 @@ class FastLock {
         pthread_mutex_destroy(&m)
     }
 
+    @inlinable
     @inline(__always)
     func lock() {
         pthread_mutex_lock(&m)
     }
     
+    @inlinable
     @inline(__always)
     func unlock() {
         pthread_mutex_unlock(&m)

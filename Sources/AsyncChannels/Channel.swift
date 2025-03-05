@@ -36,14 +36,14 @@ func ptr<T>(_ value: T) -> UnsafeRawPointer {
 @inline(__always)
 @inlinable
 func value<T>(_ p: UnsafeRawPointer?) -> T? {
+    guard let p = p else {
+        return nil
+    }
     if T.self is AnyObject.Type {
-        guard let p = p else {
-            return nil
-        }
         return Unmanaged<AnyObject>.fromOpaque(p).takeRetainedValue() as? T
     }
-    defer { p?.deallocate() }
-    return p?.assumingMemoryBound(to: T.self).pointee
+    defer { p.deallocate() }
+    return p.assumingMemoryBound(to: T.self).pointee
 }
 
 public final class Channel<T: Sendable>: @unchecked Sendable {

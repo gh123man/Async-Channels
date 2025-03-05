@@ -3,7 +3,8 @@ import Collections
 
 extension UnsafeRawPointer: @unchecked @retroactive Sendable {}
 
-public final class ChannelInternal: @unchecked Sendable {
+@usableFromInline
+final class ChannelInternal: @unchecked Sendable {
     private var mutex = FastLock()
     private let capacity: Int
     private var closed = false
@@ -11,20 +12,20 @@ public final class ChannelInternal: @unchecked Sendable {
     private var sendQueue = Deque<(UnsafeRawPointer, UnsafeContinuation<Void, Never>)>()
     private var recvQueue = Deque<UnsafeContinuation<UnsafeRawPointer?, Never>>()
 
-    public init(capacity: Int = 0) {
+    init(capacity: Int = 0) {
         self.capacity = capacity
         self.buffer = Deque(minimumCapacity: capacity)
     }
 
     var selectWaiter: SelectSignal?
     
-    @inline(__always)
-    public var isClosed: Bool {
+    var isClosed: Bool {
         mutex.lock()
         defer { mutex.unlock() }
         return closed
     }
     
+    @inline(__always)
     func receiveOrListen(_ sema: SelectSignal) -> UnsafeRawPointer? {
         mutex.lock()
         
@@ -42,6 +43,7 @@ public final class ChannelInternal: @unchecked Sendable {
         return nil
     }
     
+    @inline(__always)
     func sendOrListen(_ sema: SelectSignal, p: UnsafeRawPointer) -> Bool {
         mutex.lock()
         
@@ -79,7 +81,8 @@ public final class ChannelInternal: @unchecked Sendable {
     /// Sends data on the channel. This function will suspend until a receiver is ready or buffer space is avalible.
     /// - Parameter value: The data to send.
     @inline(__always)
-    public func send(_ p: UnsafeRawPointer) async {
+    @usableFromInline
+    func send(_ p: UnsafeRawPointer) async {
         mutex.lock()
         
         if nonBlockingSend(p) {
@@ -98,7 +101,8 @@ public final class ChannelInternal: @unchecked Sendable {
     /// A fatal error will be triggered if you attpend to send on a closed channel.
     /// - Parameter value: The input data.
     @inline(__always)
-    public func syncSend(_ p: UnsafeRawPointer) -> Bool {
+    @usableFromInline
+    func syncSend(_ p: UnsafeRawPointer) -> Bool {
         mutex.lock()
         if nonBlockingSend(p) {
             return true
@@ -108,7 +112,8 @@ public final class ChannelInternal: @unchecked Sendable {
     }
     
     @inline(__always)
-    private func nonBlockingReceive() -> UnsafeRawPointer? {
+    @usableFromInline
+    func nonBlockingReceive() -> UnsafeRawPointer? {
         if buffer.isEmpty {
             if !sendQueue.isEmpty {
                 let (p, continuation) = sendQueue.popFirst()!
@@ -137,7 +142,8 @@ public final class ChannelInternal: @unchecked Sendable {
     /// This functionw will return `nil` when the channel is closed after all buffered data is read.
     /// - Returns: data or nil.
     @inline(__always)
-    public func receive() async -> UnsafeRawPointer? {
+    @usableFromInline
+    func receive() async -> UnsafeRawPointer? {
         mutex.lock()
 
         if let p = nonBlockingReceive() {
@@ -163,7 +169,8 @@ public final class ChannelInternal: @unchecked Sendable {
     /// This function will never block or suspend.
     /// - Returns: The data or nil
     @inline(__always)
-    public func syncReceive() -> UnsafeRawPointer? {
+    @usableFromInline
+    func syncReceive() -> UnsafeRawPointer? {
         mutex.lock()
         if let p = nonBlockingReceive() {
             return p
@@ -175,7 +182,7 @@ public final class ChannelInternal: @unchecked Sendable {
     
     /// Closes the channel. A channel cannot be reopened.
     /// Once a channel is closed, no more data can be writeen. The remaining data can be read until the buffer is empty.
-    public func close() {
+    func close() {
         mutex.lock()
         defer { mutex.unlock() }
         closed = true

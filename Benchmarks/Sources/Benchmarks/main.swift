@@ -207,7 +207,6 @@ func run<T: Initializable>(_ type: T.Type) async {
     formatResult(await testMPSCWriteContention(type))
 
     formatResult(await testSPSCBuffered(type))
-    formatResult(await testSPSCBuffered(type))
     formatResult(await testMPSCBuffered(type))
     formatResult(await testSPMCBuffered(type))
     formatResult(await testMPMCBuffered(type))

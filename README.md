@@ -210,41 +210,6 @@ let result = resultChannel.blockingSend("Hello world")
 
 You an also synchronously poll a channel if it is ready or not without blocking using `syncReceive`. Similarly you can use `syncSend` to send a value synchronously without blocking. Note that in both cases, if the channel is full it will discard the sent value or return `nil` on receive. 
 
-
-
-## WaitGroup
-
-This library also includes a `WaitGroup` implementation. Wait groups are useful when you want to wait for multiple tasks to finish. 
-
-### Example
-
-```swift
-let wg = WaitGroup()
-let signal = Channel<Bool>()
-let done = Channel<Bool>()
-
-// Task that drains the signal channel
-Task {
-    for await _ in signal { }
-    await done <- true
-}
-
-// 100 workers that write to the signal channel
-for _ in 0..<100 {
-    await wg.add(1)
-    Task {
-        await signal <- true
-        await wg.done()
-    }
-}
-// When all workers are done - signal is drained, so wg will be done.
-await wg.wait()
-
-// Closing the signal channel means it's empty, so done is signaled.
-signal.close()
-await <-done
-```
-
 ## Advanced Usage
 This library also includes some extra features that are made possible by the flexibility of Swift's `resultBuilder`. 
 

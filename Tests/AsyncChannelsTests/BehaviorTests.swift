@@ -442,6 +442,8 @@ final class BehaviorTests {
             }
             await <-result
             await <-result
+            c.close()
+            result.close()
         }
     }
     
@@ -450,30 +452,42 @@ final class BehaviorTests {
             let a = Channel<Int>()
             let b = Channel<Int>()
             let c = Channel<Int>()
-            let done1 = Channel<Bool>()
             let total = 1000
-            
-            Task {
-                for _ in (0...total) {
-                    await a <- 1
-                }
-            }
-            
-            Task {
-                for _ in (0...total) {
-                    await b <- 1
-                }
-            }
-            
-            Task {
-                var done = false
-                while !done {
-                    await select {
-                        any(a, b) {
-                            receive($0) { await c <- $0! }
-                        }
-                        receive(done1) { done = true }
+            async let tg: () = withTaskGroup(of: Void.self) { group in
+                
+                group.addTask {
+                    for _ in (0..<total) {
+                        await a <- 1
                     }
+                    a.close()
+                }
+                
+                group.addTask {
+                    for _ in (0..<total) {
+                        await b <- 1
+                    }
+                    b.close()
+                }
+                
+                group.addTask {
+                    var done = false
+                    var count = 0
+                    while !done {
+                        await select {
+                            any(a, b) {
+                                receive($0) {
+                                    if let v = $0 {
+                                        count += 1
+                                        await c <- v
+                                    }
+                                    if count >= 2 * total {
+                                        done = true
+                                    }
+                                }
+                            }
+                        }
+                    }
+                    c.close()
                 }
             }
             
@@ -488,10 +502,10 @@ final class BehaviorTests {
                         }
                     }
                 }
-                
             }
             
             #expect(count == 2 * total)
+            await tg
         }
     }
     

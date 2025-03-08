@@ -400,37 +400,57 @@ final class AsyncTest {
         await <-result
     }
     
+    
+    // Run the tests a number of times to shake out any concurrency issues.
+    func stress(_ n: Int = 100,_ test: () async throws -> Void) async {
+        for _ in 0..<n {
+            try! await test()
+        }
+    }
+    
     @Test func manyToOne() async {
         let a = Channel<Int>()
         let b = Channel<Int>()
         let c = Channel<Int>()
-        let done1 = Channel<Bool>()
         let total = 1000
-
-        Task {
-            for _ in (0...total) {
-                await a <- 1
-            }
-        }
-
-        Task {
-            for _ in (0...total) {
-                await b <- 1
-            }
-        }
-
-        Task {
-            var done = false
-            while !done {
-                await select {
-                    any(a, b) {
-                        receive($0) { await c <- $0! }
-                    }
-                    receive(done1) { done = true }
+        async let tg: () = withTaskGroup(of: Void.self) { group in
+            
+            group.addTask {
+                for _ in (0..<total) {
+                    await a <- 1
                 }
+                a.close()
+            }
+            
+            group.addTask {
+                for _ in (0..<total) {
+                    await b <- 1
+                }
+                b.close()
+            }
+            
+            group.addTask {
+                var done = false
+                var count = 0
+                while !done {
+                    await select {
+                        any(a, b) {
+                            receive($0) {
+                                if let v = $0 {
+                                    count += 1
+                                    await c <- v
+                                }
+                                if count >= 2 * total {
+                                    done = true
+                                }
+                            }
+                        }
+                    }
+                }
+                c.close()
             }
         }
-
+        
         var done = false
         var count = 0
         while !done {
@@ -442,10 +462,10 @@ final class AsyncTest {
                     }
                 }
             }
-
         }
-
+        
         #expect(count == 2 * total)
+        await tg
     }
     
     @Test func outOfOrder() async {

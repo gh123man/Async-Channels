@@ -259,9 +259,11 @@ func runMPMCAsyncAlg<T: Initializable>(_ type: T.Type, producers: Int, consumers
         let a = AsyncChannel<T>()
         
         async let writeGroup: () = withTaskGroup(of: Void.self) { group in
-            group.addTask {
-                for _ in 0 ..< writes / producers {
-                    await a.send(T())
+            for _ in 0..<producers {
+                group.addTask {
+                    for _ in 0 ..< writes / producers {
+                        await a.send(T())
+                    }
                 }
             }
         }

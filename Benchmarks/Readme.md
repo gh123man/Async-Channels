@@ -36,54 +36,54 @@ The below results are from running the whole benchmark suit which covers multipl
 
 Test | Type | Execution Time(ms)
 -----|------|---------------
-SPSC | `Int` | `1090`
-MPSC | `Int` | `698`
-SPMC | `Int` | `887`
-MPMC | `Int` | `957`
-MPSC Write Contention | `Int` | `707`
-SPSC Buffered(100) | `Int` | `604`
-MPSC Buffered(100) | `Int` | `639`
-SPMC Buffered(100) | `Int` | `642`
-MPMC Buffered(100) | `Int` | `960`
-MPSC Write Contention Buffered(100) | `Int` | `1095`
-SyncRW | `Int` | `1505`
-Channel multi-select | `Int` | `1172`
-SPSC | `String` | `1299`
-MPSC | `String` | `830`
-SPMC | `String` | `911`
-MPMC | `String` | `1001`
-MPSC Write Contention | `String` | `828`
-SPSC Buffered(100) | `String` | `725`
-MPSC Buffered(100) | `String` | `703`
-SPMC Buffered(100) | `String` | `691`
-MPMC Buffered(100) | `String` | `1014`
-MPSC Write Contention Buffered(100) | `String` | `1152`
-SyncRW | `String` | `1703`
-Channel multi-select | `String` | `1190`
-SPSC | `ValueData` | `1167`
-MPSC | `ValueData` | `772`
-SPMC | `ValueData` | `904`
-MPMC | `ValueData` | `977`
-MPSC Write Contention | `ValueData` | `768`
-SPSC Buffered(100) | `ValueData` | `496`
-MPSC Buffered(100) | `ValueData` | `652`
-SPMC Buffered(100) | `ValueData` | `645`
-MPMC Buffered(100) | `ValueData` | `987`
-MPSC Write Contention Buffered(100) | `ValueData` | `1158`
-SyncRW | `ValueData` | `1485`
-Channel multi-select | `ValueData` | `1176`
-SPSC | `RefData` | `1306`
-MPSC | `RefData` | `933`
-SPMC | `RefData` | `969`
-MPMC | `RefData` | `1219`
-MPSC Write Contention | `RefData` | `946`
-SPSC Buffered(100) | `RefData` | `675`
-MPSC Buffered(100) | `RefData` | `729`
-SPMC Buffered(100) | `RefData` | `742`
-MPMC Buffered(100) | `RefData` | `1220`
-MPSC Write Contention Buffered(100) | `RefData` | `1221`
-SyncRW | `RefData` | `1685`
-Channel multi-select | `RefData` | `1198`
+SPSC | `Int` | `1320`
+MPSC | `Int` | `947`
+SPMC | `Int` | `1195`
+MPMC | `Int` | `1065`
+MPSC Write Contention | `Int` | `1424`
+SPSC Buffered(100) | `Int` | `446`
+MPSC Buffered(100) | `Int` | `799`
+SPMC Buffered(100) | `Int` | `787`
+MPMC Buffered(100) | `Int` | `1071`
+MPSC Write Contention Buffered(100) | `Int` | `1891`
+SyncRW | `Int` | `1752`
+Channel multi-select | `Int` | `1972`
+SPSC | `String` | `1527`
+MPSC | `String` | `1154`
+SPMC | `String` | `1264`
+MPMC | `String` | `1117`
+MPSC Write Contention | `String` | `1544`
+SPSC Buffered(100) | `String` | `623`
+MPSC Buffered(100) | `String` | `895`
+SPMC Buffered(100) | `String` | `873`
+MPMC Buffered(100) | `String` | `1139`
+MPSC Write Contention Buffered(100) | `String` | `1988`
+SyncRW | `String` | `1793`
+Channel multi-select | `String` | `1980`
+SPSC | `ValueData` | `1386`
+MPSC | `ValueData` | `1083`
+SPMC | `ValueData` | `1338`
+MPMC | `ValueData` | `1124`
+MPSC Write Contention | `ValueData` | `1598`
+SPSC Buffered(100) | `ValueData` | `550`
+MPSC Buffered(100) | `ValueData` | `890`
+SPMC Buffered(100) | `ValueData` | `787`
+MPMC Buffered(100) | `ValueData` | `1085`
+MPSC Write Contention Buffered(100) | `ValueData` | `1947`
+SyncRW | `ValueData` | `1741`
+Channel multi-select | `ValueData` | `1970`
+SPSC | `RefData` | `1566`
+MPSC | `RefData` | `1262`
+SPMC | `RefData` | `1251`
+MPMC | `RefData` | `1338`
+MPSC Write Contention | `RefData` | `1599`
+SPSC Buffered(100) | `RefData` | `753`
+MPSC Buffered(100) | `RefData` | `947`
+SPMC Buffered(100) | `RefData` | `959`
+MPMC Buffered(100) | `RefData` | `1348`
+MPSC Write Contention Buffered(100) | `RefData` | `2078`
+SyncRW | `RefData` | `1996`
+Channel multi-select | `RefData` | `2003`
 
 
 ## Async Channels vs Async Algorithms AsyncChannel
@@ -92,26 +92,26 @@ Apple has their own channel implementation in the [swift-async-algorithms packag
 
 Test | Type | Execution Time(ms)
 -----|------|---------------
-SPSC Async alg | `Int` | `3000`
-MPSC Async alg | `Int` | `4030`
-SPMC Async alg | `Int` | `3951`
-MPMC Async alg | `Int` | `4231`
-MPSC Async alg Write Contention | `Int` | `7343`
-SPSC Async alg | `String` | `3021`
-MPSC Async alg | `String` | `4083`
-SPMC Async alg | `String` | `3937`
-MPMC Async alg | `String` | `4313`
-MPSC Async alg Write Contention | `String` | `21004`
-SPSC Async alg | `ValueData` | `3006`
-MPSC Async alg | `ValueData` | `4052`
-SPMC Async alg | `ValueData` | `3911`
-MPMC Async alg | `ValueData` | `4275`
-MPSC Async alg Write Contention | `ValueData` | `19684`
-SPSC Async alg | `RefData` | `3026`
-MPSC Async alg | `RefData` | `4064`
-SPMC Async alg | `RefData` | `3929`
-MPMC Async alg | `RefData` | `4285`
-MPSC Async alg Write Contention | `RefData` | `20992`
+SPSC Async alg | `Int` | `3132`
+MPSC Async alg | `Int` | `4476`
+SPMC Async alg | `Int` | `4354`
+MPMC Async alg | `Int` | `5412`
+MPSC Async alg Write Contention | `Int` | `10745`
+SPSC Async alg | `String` | `3024`
+MPSC Async alg | `String` | `4669`
+SPMC Async alg | `String` | `4437`
+MPMC Async alg | `String` | `5474`
+MPSC Async alg Write Contention | `String` | `21313`
+SPSC Async alg | `ValueData` | `2951`
+MPSC Async alg | `ValueData` | `4534`
+SPMC Async alg | `ValueData` | `4420`
+MPMC Async alg | `ValueData` | `5768`
+MPSC Async alg Write Contention | `ValueData` | `23013`
+SPSC Async alg | `RefData` | `3173`
+MPSC Async alg | `RefData` | `5031`
+SPMC Async alg | `RefData` | `4597`
+MPMC Async alg | `RefData` | `5568`
+MPSC Async alg Write Contention | `RefData` | `20117`
 
 Async algorithms channel seems to fall apart with write contention on non integer types. 
 

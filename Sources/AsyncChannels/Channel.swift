@@ -24,7 +24,7 @@ prefix operator <-
 
 @inline(__always)
 @inlinable
-func ptr<T>(_ value: T) -> UnsafeRawPointer {
+func ptr<T: Sendable>(_ value: T) -> UnsafeRawPointer {
     if T.self is AnyObject.Type {
         return UnsafeRawPointer(Unmanaged.passRetained(value as AnyObject).toOpaque())
     }
@@ -35,7 +35,7 @@ func ptr<T>(_ value: T) -> UnsafeRawPointer {
 
 @inline(__always)
 @inlinable
-func value<T>(_ p: UnsafeRawPointer?) -> T? {
+func value<T: Sendable>(_ p: UnsafeRawPointer?) -> T? {
     guard let p = p else {
         return nil
     }

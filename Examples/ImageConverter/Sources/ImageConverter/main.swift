@@ -29,8 +29,8 @@ func getFiles(matchingExtension fileExtension: String, inDirectory directoryPath
 
 // Constants
 
-let directoryPath = "<PATH TO IMAGES>" // Change me!
-let files = getFiles(matchingExtension: "HEIC", inDirectory: directoryPath)
+let directoryPath = "/Users/brian/scratch/imconvert/" // Change me!
+let files = getFiles(matchingExtension: "heic", inDirectory: directoryPath)
 
 // A queue of file paths
 let input = Channel<String>(capacity: 100)
@@ -38,34 +38,31 @@ let input = Channel<String>(capacity: 100)
 // A queue of converted images and their names
 let output = Channel<(Data, String)>(capacity: 100)
 
-// keep track of how many workers are active
-let waitGroup = WaitGroup()
-
 // Keep track of when we are done writing images to disk
 let done = Channel<Bool>()
 
 // Create a worker for each avalible CPU
-for i in 0..<ProcessInfo.processInfo.activeProcessorCount {
-    await waitGroup.add(1)
-    Task.detached {
-        for await path in input {
-            print("Process \(path) on task \(i)")
-            guard let heicImage = NSImage(contentsOfFile: path) else {
-                print("failed to open image \(path)")
-                continue
+async let tg: () = withTaskGroup(of: Void.self) { group in
+    for i in 0..<ProcessInfo.processInfo.activeProcessorCount {
+        group.addTask {
+            for await path in input {
+                print("Process \(path) on task \(i)")
+                guard let heicImage = NSImage(contentsOfFile: path) else {
+                    print("failed to open image \(path)")
+                    continue
+                }
+                
+                guard let jpgImage = convertHEICToJPG(heicImage: heicImage) else {
+                    print("Failed to convert image \(path)")
+                    continue
+                }
+                
+                let name = String(path.split(separator: "/").last!.split(separator: ".").first!)
+                print("Converted \(name) to jpg")
+                
+                await output <- (jpgImage, name)
             }
-        
-            guard let jpgImage = convertHEICToJPG(heicImage: heicImage) else {
-                print("Failed to convert image \(path)")
-                continue
-            }
-            
-            let name = String(path.split(separator: "/").last!.split(separator: ".").first!)
-            print("Converted \(name) to jpg")
-            
-            await output <- (jpgImage, name)
         }
-        await waitGroup.done()
     }
 }
 
@@ -88,7 +85,7 @@ for file in files {
 input.close()
 
 // Wait for all workers to finish
-await waitGroup.wait()
+await tg
 
 // Close the output
 output.close()

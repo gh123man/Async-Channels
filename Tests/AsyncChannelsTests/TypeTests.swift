@@ -170,22 +170,24 @@ final class TypeTests {
 //        for _ in 0...100_000 {
             let c = TestC<TestS<String>>(TestS<String>(v: "Hello", s: "foo"), s: "barA")
             let e: TestE<TestC<TestS<String>>> = .t(c)
-            let s: TestS<TestE<TestC<TestS<String>>>> = .init(v: e, s: "barB")
+            let l: [TestS<TestE<TestC<TestS<String>>>>] = [.init(v: e, s: "barB"), .init(v: e, s: "barB"), .init(v: e, s: "barB"), .init(v: e, s: "barB"), .init(v: e, s: "barB")]
             
             await {
-                let c = Channel<TestS<TestE<TestC<TestS<String>>>>>(capacity: 1)
-                await c <- s
-                let r = (await <-c)!
+                let c = Channel<[TestS<TestE<TestC<TestS<String>>>>] >(capacity: 1)
+                await c <- l
+                let re = (await <-c)!
                 
-                #expect(r.s == "barB")
-                guard case let .t(v) = r.v else {
-                    Issue.record("Failed to unwrap value")
-                    return
+                for r in re {
+                    #expect(r.s == "barB")
+                    guard case let .t(v) = r.v else {
+                        Issue.record("Failed to unwrap value")
+                        return
+                    }
+                    #expect(v.s == "barA")
+                    #expect(v.v.v == "Hello")
+                    #expect(v.v.s == "foo")
+                    #expect(v.v.v == "Hello")
                 }
-                #expect(v.s == "barA")
-                #expect(v.v.v == "Hello")
-                #expect(v.v.s == "foo")
-                #expect(v.v.v == "Hello")
             }()
 //        }
     }

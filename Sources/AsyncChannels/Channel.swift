@@ -42,8 +42,12 @@ func value<T>(_ p: UnsafeRawPointer?) -> T? {
     if T.self is AnyObject.Type {
         return Unmanaged<AnyObject>.fromOpaque(p).takeRetainedValue() as? T
     }
-    defer { p.deallocate() }
-    return p.assumingMemoryBound(to: T.self).pointee
+    let pt = UnsafeMutablePointer<T>(mutating: p.assumingMemoryBound(to: T.self))
+    defer {
+        pt.deinitialize(count: 1)
+        pt.deallocate()
+    }
+    return pt.pointee
 }
 
 public final class Channel<T: Sendable>: @unchecked Sendable {

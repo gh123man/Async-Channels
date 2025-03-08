@@ -1,6 +1,27 @@
 import Testing
 @testable import AsyncChannels
 
+
+final class TestC<T: Sendable>: Sendable {
+    let v: T
+    let s: String
+    init(_ v: T, s: String) {
+        self.v = v
+        self.s = s
+    }
+}
+
+struct TestS<T: Sendable>: Sendable {
+    let v: T
+    let s: String
+}
+
+enum TestE<T: Sendable>: Sendable {
+    case foo
+    case bar
+    case t(T)
+}
+
 @Suite(.timeLimit(.minutes(1)))
 final class TypeTests {
     
@@ -120,13 +141,15 @@ final class TypeTests {
         await assertType(MyEnum.first(100))
         await assertType(MyEnum.second("enum"))
 
-        // Classes
-        final class MyClass: Equatable, Sendable {
-            let x: Int
-            init(x: Int) { self.x = x }
-            static func == (lhs: MyClass, rhs: MyClass) -> Bool { lhs.x == rhs.x }
+        for _ in 0...100_000 {
+            // Classes
+            final class MyClass: Equatable, Sendable {
+                let x: Int
+                init(x: Int) { self.x = x }
+                static func == (lhs: MyClass, rhs: MyClass) -> Bool { lhs.x == rhs.x }
+            }
+            await assertType(MyClass(x: 5))
         }
-        await assertType(MyClass(x: 5))
 
         // Actors
         actor MyActor: Sendable, Equatable {
@@ -139,5 +162,31 @@ final class TypeTests {
         }
         let actorInstance = MyActor(value: 10)
         await assertType(actorInstance)
+        
+        
+        // complex/generic
+        
+        // Uncomment and check for leaks!
+//        for _ in 0...100_000 {
+            let c = TestC<TestS<String>>(TestS<String>(v: "Hello", s: "foo"), s: "barA")
+            let e: TestE<TestC<TestS<String>>> = .t(c)
+            let s: TestS<TestE<TestC<TestS<String>>>> = .init(v: e, s: "barB")
+            
+            await {
+                let c = Channel<TestS<TestE<TestC<TestS<String>>>>>(capacity: 1)
+                await c <- s
+                let r = (await <-c)!
+                
+                #expect(r.s == "barB")
+                guard case let .t(v) = r.v else {
+                    Issue.record("Failed to unwrap value")
+                    return
+                }
+                #expect(v.s == "barA")
+                #expect(v.v.v == "Hello")
+                #expect(v.v.s == "foo")
+                #expect(v.v.v == "Hello")
+            }()
+//        }
     }
 }

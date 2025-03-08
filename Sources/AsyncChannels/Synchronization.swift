@@ -2,13 +2,16 @@ import Foundation
 
 @usableFromInline
 actor SelectSignal {
-    private var signaled = false
-    private var continuation: UnsafeContinuation<Void, Never>?
+    @usableFromInline
+    var signaled = false
+    @usableFromInline
+    var continuation: UnsafeContinuation<Void, Never>?
 
     @usableFromInline
     init() {}
 
-    @usableFromInline
+    @inline(__always)
+    @inlinable
     func wait() async {
         if signaled {
             return
@@ -18,12 +21,16 @@ actor SelectSignal {
         }
     }
     
-    private func _signal() {
+    @inline(__always)
+    @inlinable
+    func _signal() {
         signaled = true
         continuation?.resume()
         continuation = nil
     }
     
+    @inline(__always)
+    @inlinable
     nonisolated func signal() {
         Task {
             await _signal()

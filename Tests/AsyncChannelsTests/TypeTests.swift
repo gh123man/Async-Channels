@@ -1,7 +1,6 @@
 import Testing
 @testable import AsyncChannels
 
-
 final class TestC<T: Sendable>: Sendable {
     let v: T
     let s: String

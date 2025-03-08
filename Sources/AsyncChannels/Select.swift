@@ -135,7 +135,7 @@ public func receive<T>(_ chan: Channel<T>, _ outFunc: @escaping (T?) async -> ()
 public func receive<T>(_ chan: Channel<T>, _ outFunc: @escaping () async -> ()) -> [SelectHandler] {
     return [SelectHandler(inner: ReceiveHandler(chan: chan.chanInternal, outFunc: {
         // Unpack the pointer even if we don't use it - otherwise we can leak memory
-        value($0) as T?
+        _ = value($0) as T?
         await outFunc()
     }))]
 }
@@ -143,7 +143,7 @@ public func receive<T>(_ chan: Channel<T>, _ outFunc: @escaping () async -> ()) 
 public func receive<T>(_ chan: Channel<T>) -> [SelectHandler] {
     return [SelectHandler(inner: ReceiveHandler(chan: chan.chanInternal, outFunc: {
         // Unpack the pointer even if we don't use it - otherwise we can leak memory
-        value($0) as T?
+        _ = value($0) as T?
     }))]
 }
 

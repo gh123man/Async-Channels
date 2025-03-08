@@ -42,8 +42,6 @@ print()
 print("Test | Type | Execution Time(ms)")
 print("-----|------|---------------")
 
-//await testCoherency()
-//await testLL()
 await run(Int.self)
 await run(String.self)
 await run(ValueData.self)

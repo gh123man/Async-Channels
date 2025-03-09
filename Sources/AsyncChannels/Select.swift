@@ -11,6 +11,15 @@ public struct SelectHandler {
     }
 }
 
+protocol Selectable {
+}
+
+extension Channel: Selectable {
+    func intChan() -> ChannelInternal {
+        return self.channelInternal
+    }
+}
+
 @usableFromInline
 protocol SelectProtocol {
     func handle(_ sm: SelectSignal) async -> Bool
@@ -73,7 +82,7 @@ struct SendHandler: SelectProtocol {
     
     @usableFromInline
     func handle(_ sm: SelectSignal) async -> Bool {
-        if chan.sendOrListen(sm, p: val) {
+        if let handled = try? chan.sendOrListen(sm, p: val), handled {
             await onSend()
             return true
         }
@@ -128,31 +137,33 @@ public func select(@SelectCollector cases: () -> ([SelectHandler])) async {
     }
 }
 
+// MARK: Select functons for Channel<T>
+
 public func receive<T>(_ chan: Channel<T>, _ outFunc: @escaping (T?) async -> ()) -> [SelectHandler] {
-    return [SelectHandler(inner: ReceiveHandler(chan: chan.chanInternal, outFunc: { await outFunc(value($0)) }))]
+    return [SelectHandler(inner: ReceiveHandler(chan: chan.channelInternal, outFunc: { await outFunc(toValue($0)) }))]
 }
 
 public func receive<T>(_ chan: Channel<T>, _ outFunc: @escaping () async -> ()) -> [SelectHandler] {
-    return [SelectHandler(inner: ReceiveHandler(chan: chan.chanInternal, outFunc: {
+    return [SelectHandler(inner: ReceiveHandler(chan: chan.channelInternal, outFunc: {
         // Unpack the pointer even if we don't use it - otherwise we can leak memory
-        _ = value($0) as T?
+        _ = toValue($0) as T?
         await outFunc()
     }))]
 }
 
 public func receive<T>(_ chan: Channel<T>) -> [SelectHandler] {
-    return [SelectHandler(inner: ReceiveHandler(chan: chan.chanInternal, outFunc: {
+    return [SelectHandler(inner: ReceiveHandler(chan: chan.channelInternal, outFunc: {
         // Unpack the pointer even if we don't use it - otherwise we can leak memory
-        _ = value($0) as T?
+        _ = toValue($0) as T?
     }))]
 }
 
 public func send<T>(_ val: T, to chan: Channel<T>) -> [SelectHandler] {
-    return [SelectHandler(inner: SendHandler(chan: chan.chanInternal, val: ptr(val), onSend: {}))]
+    return [SelectHandler(inner: SendHandler(chan: chan.channelInternal, val: toPointer(val), onSend: {}))]
 }
 
 public func send<T>(_ val: T, to chan: Channel<T>, _ onSend: @escaping () async -> ()) -> [SelectHandler] {
-    return [SelectHandler(inner: SendHandler(chan: chan.chanInternal, val: ptr(val), onSend: onSend))]
+    return [SelectHandler(inner: SendHandler(chan: chan.channelInternal, val: toPointer(val), onSend: onSend))]
 }
 
 public func none(handler: @escaping () async -> ()) -> [SelectHandler] {
@@ -166,3 +177,33 @@ public func any<S, T>(_ seq: S, @SelectCollector cases: (T) -> ([SelectHandler])
 public func any<T>(_ elements: T..., @SelectCollector cases: (T) -> ([SelectHandler])) -> [SelectHandler] {
     return elements.flatMap { cases($0) }
 }
+
+// MARK: Select functons for ThrowingChannel<T>
+
+public func receive<T>(_ chan: ThrowingChannel<T>, _ outFunc: @escaping (T?) async -> ()) -> [SelectHandler] {
+    return [SelectHandler(inner: ReceiveHandler(chan: chan.channelInternal, outFunc: { await outFunc(toValue($0)) }))]
+}
+
+public func receive<T>(_ chan: ThrowingChannel<T>, _ outFunc: @escaping () async -> ()) -> [SelectHandler] {
+    return [SelectHandler(inner: ReceiveHandler(chan: chan.channelInternal, outFunc: {
+        // Unpack the pointer even if we don't use it - otherwise we can leak memory
+        _ = toValue($0) as T?
+        await outFunc()
+    }))]
+}
+
+public func receive<T>(_ chan: ThrowingChannel<T>) -> [SelectHandler] {
+    return [SelectHandler(inner: ReceiveHandler(chan: chan.channelInternal, outFunc: {
+        // Unpack the pointer even if we don't use it - otherwise we can leak memory
+        _ = toValue($0) as T?
+    }))]
+}
+
+public func send<T>(_ val: T, to chan: ThrowingChannel<T>) -> [SelectHandler] {
+    return [SelectHandler(inner: SendHandler(chan: chan.channelInternal, val: toPointer(val), onSend: {}))]
+}
+
+public func send<T>(_ val: T, to chan: ThrowingChannel<T>, _ onSend: @escaping () async -> ()) -> [SelectHandler] {
+    return [SelectHandler(inner: SendHandler(chan: chan.channelInternal, val: toPointer(val), onSend: onSend))]
+}
+

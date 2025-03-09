@@ -29,12 +29,13 @@ final class BehaviorTests {
             let a = Channel<Int>()
             let b = Channel<Int>()
             
-            Task {
+            let task = Task {
                 await <-a
                 await b <- 0
             }
             await a <- 0
             await <-b
+            await task.value
         }
     }
     
@@ -43,12 +44,13 @@ final class BehaviorTests {
             let a = Channel<Int>()
             let b = Channel<Int>()
             
-            Task {
+            let task = Task {
                 await _ = a.receive()
                 await b.send(0)
             }
             await a.send(0)
             await _ = b.receive()
+            await task.value
         }
     }
     
@@ -57,24 +59,25 @@ final class BehaviorTests {
             let a = Channel<Bool>()
             let done = Channel<Bool>()
             
-            Task {
+            async let t1: () = Task {
                 await <-a
                 await done <- true
-            }
-            Task {
+            }.value
+            async let t2: () = Task {
                 await <-a
                 await done <- true
-            }
-            Task {
+            }.value
+            async let t3: () = Task {
                 await <-a
                 await done <- true
-            }
+            }.value
             
             a.close()
             
             await <-done
             await <-done
             await <-done
+            _ = await [t1, t2, t3]
         }
     }
     
@@ -82,21 +85,19 @@ final class BehaviorTests {
         await stress {
             let a = Channel<Int>(capacity: 2)
             let resume = Channel<Bool>()
-            let done = Channel<Bool>()
             
-            Task {
+            let task = Task {
                 await a <- 1
                 await a <- 2
                 await resume <- true
                 await a <- 3
-                await done <- true
             }
             await <-resume
             
             await assertChanRx(a, 1)
             await assertChanRx(a, 2)
             await assertChanRx(a, 3)
-            await <-done
+            await task.value
         }
     }
     
@@ -105,7 +106,7 @@ final class BehaviorTests {
             let a = Channel<Bool>(capacity: 10)
             let done = Channel<Int>()
             
-            Task {
+            let task = Task {
                 var count = 0
                 for await _ in a {
                     count += 1
@@ -119,6 +120,7 @@ final class BehaviorTests {
             a.close()
             
             let count = await <-done
+            await task.value
             
             #expect(count == 3)
         }
@@ -128,12 +130,37 @@ final class BehaviorTests {
         await stress {
             let a = Channel<Int>(capacity: 10)
             
-            Task {
+            let task = Task {
                 for _ in (0..<10) {
                     await a <- 1
                 }
                 
                 a.close()
+            }
+            await task.value
+            
+            let count = await a.reduce(0) { $0 + $1 }
+            #expect(10 == count)
+        }
+    }
+    
+    @Test func closeChanThrowing() async {
+        await stress {
+            let a = ThrowingChannel<Int>(capacity: 10)
+            
+            try await Task {
+                for _ in (0..<10) {
+                    try await a <- 1
+                }
+                
+                a.close()
+            }.value
+            
+            do {
+                try await a <- 1
+            } catch ChannelError.closed {
+            } catch {
+                Issue.record()
             }
             
             let count = await a.reduce(0) { $0 + $1 }
@@ -146,13 +173,14 @@ final class BehaviorTests {
             let a = Channel<String>()
             let done = Channel<Bool>()
             
-            Task {
+            let task = Task {
                 await <-a
                 await done <- true
             }
             
             a.close()
             await <-done
+            await task.value
         }
     }
     
@@ -163,24 +191,21 @@ final class BehaviorTests {
             let d = Channel<String>()
             let result = Channel<String>(capacity: 2)
             
-            Task {
+            let task = Task {
                 await c <- "foo"
                 await d <- "bar"
-            }
-            
-            await select {
-                receive(d) {
-                    await result <- $0!
-                }
-                receive(c) {
-                    await result <- $0!
-                }
             }
             
             await select {
                 receive(d) { await result <- $0! }
                 receive(c) { await result <- $0! }
             }
+            
+            await select {
+                receive(d) { await result <- $0! }
+                receive(c) { await result <- $0! }
+            }
+            await task.value
             result.close()
             
             let r = await result.reduce(into: []) { $0.append($1) }
@@ -194,7 +219,7 @@ final class BehaviorTests {
             let b = Channel<String>()
             let result = Channel<String>(capacity: 2)
             
-            Task {
+            let task = Task {
                 await a <- "foo"
                 await b <- "bar"
             }
@@ -210,6 +235,7 @@ final class BehaviorTests {
                     receive($0) { await result <- $0! }
                 }
             }
+            await task.value
             result.close()
             
             let r = await result.reduce(into: []) { $0.append($1) }
@@ -223,7 +249,7 @@ final class BehaviorTests {
             let b = Channel<String>()
             let result = Channel<String>(capacity: 2)
             
-            Task {
+            let task = Task {
                 await a <- "foo"
                 await b <- "bar"
             }
@@ -239,6 +265,7 @@ final class BehaviorTests {
                     receive($0) { await result <- $0! }
                 }
             }
+            await task.value
             result.close()
             
             let r = await result.reduce(into: []) { $0.append($1) }
@@ -251,7 +278,7 @@ final class BehaviorTests {
             let a = Channel<String>()
             let result = Channel<String>(capacity: 1)
             
-            Task {
+            let task = Task {
                 await a <- "foo"
             }
             
@@ -260,6 +287,7 @@ final class BehaviorTests {
                     receive(a) { await result <- $0! }
                 }
             }
+            await task.value
             
             result.close()
             
@@ -272,11 +300,11 @@ final class BehaviorTests {
             let a = Channel<String>()
             let done = Channel<String>()
             
-            Task {
+            let task1 = Task {
                 await a <- "foo"
             }
             
-            Task {
+            let task2 = Task {
                 await select {
                     if false {
                         receive(a) { Issue.record() }
@@ -288,7 +316,9 @@ final class BehaviorTests {
             }
             
             await <-done
+            await task2.value
             await <-a
+            await task1.value
         }
     }
     
@@ -298,11 +328,11 @@ final class BehaviorTests {
             let b = Channel<String>()
             let result = Channel<String>(capacity: 1)
             
-            Task {
+            let taska = Task {
                 await a <- "foo"
             }
             
-            Task {
+            let taskb = Task {
                 await b <- "bar"
             }
             
@@ -318,6 +348,8 @@ final class BehaviorTests {
             
             await assertChanRx(result, "bar")
             await <-a
+            await taska.value
+            await taskb.value
         }
     }
     
@@ -329,15 +361,15 @@ final class BehaviorTests {
             let result = Channel<String>(capacity: 2)
             let x = 0
             
-            Task {
+            async let ta: () = Task {
                 await a <- "foo"
-            }
-            Task {
+            }.value
+            async let tb: () = Task {
                 await b <- "bar"
-            }
-            Task {
+            }.value
+            async let tc: () = Task {
                 await c <- "baz"
-            }
+            }.value
             
             await select {
                 switch x {
@@ -355,6 +387,7 @@ final class BehaviorTests {
             await assertChanRx(result, "foo")
             await <-b
             await <-c
+            _ = await [ta, tb, tc]
         }
     }
 
@@ -392,12 +425,13 @@ final class BehaviorTests {
             let validate = Channel<Bool>(capacity: 1)
             let resume = Channel<Bool>()
             
-            Task {
+            let task = Task {
                 await c <- "foo"
                 await resume <- true
             }
             
             await <-resume
+            await task.value
             
             var cCall = 0
             
@@ -429,7 +463,7 @@ final class BehaviorTests {
             await c <- true
             let result = Channel<Bool>()
             
-            Task {
+            let task = Task {
                 await select {
                     receive(c) { await result <- true }
                     none { Issue.record() }
@@ -442,6 +476,7 @@ final class BehaviorTests {
             }
             await <-result
             await <-result
+            await task.value
             c.close()
             result.close()
         }
@@ -597,20 +632,17 @@ final class BehaviorTests {
     @Test func closeSelect() async {
         await stress {
             let a = Channel<String>(capacity: 10)
-            let done = Channel<Bool>()
             
-            Task {
+            let task = Task {
                 await select {
                     receive(a) { val in
                         #expect(val == nil)
                     }
                 }
-                await done <- true
             }
             
-            
             a.close()
-            await <-done
+            await task.value
         }
     }
     
@@ -628,10 +660,11 @@ final class BehaviorTests {
         await stress {
             let a = Channel<Bool>()
             
-            Task {
+            let task = Task {
                 for await _ in a { }
             }
             a.close()
+            await task.value
         }
     }
     
@@ -647,16 +680,9 @@ final class BehaviorTests {
     
     @Test func structSend() async {
         await stress {
-            
-            let c = Channel<SomeData>()
-            
-            Task {
-                await c <- SomeData(name: "foo", age: 21)
-            }
-            
             let b = Channel<SomeData>(capacity: 10)
             
-            Task {
+            let task = Task {
                 await b <- SomeData(name: "bar", age: 21)
                 await b <- SomeData(name: "bar", age: 21)
                 await b <- SomeData(name: "bar", age: 21)
@@ -669,15 +695,15 @@ final class BehaviorTests {
                 count += 1
             }
             #expect(count == 3)
+            await task.value
         }
     }
 
     @Test func blockWhenFull() async {
         await stress(100) {
             let c = Channel<Bool>(capacity: 100)
-            let blocked = Channel<Bool>()
             
-            Task {
+            let task = Task {
                 var done = false
                 while !done {
                     await select {
@@ -687,11 +713,10 @@ final class BehaviorTests {
                         }
                     }
                 }
-                await blocked <- true
                 c.close()
             }
             
-            await <-blocked
+            await task.value
             
             var sum = 0
             for await _ in c {
@@ -705,15 +730,9 @@ final class BehaviorTests {
     @Test func blockWhenEmpty() async {
         await stress(100) {
             let c = Channel<Bool>(capacity: 100)
-            let full = Channel<Bool>()
-            
-            Task {
-                for _ in (0..<100) {
-                    await c <- true
-                }
-                await full <- true
+            for _ in (0..<100) {
+                await c <- true
             }
-            await  <-full
             
             var done = false
             var sum = 0
@@ -745,7 +764,7 @@ final class BehaviorTests {
             }
             
             // 1 task recieving from 100 channels and writing the results to 1 channel.
-            Task {
+            let task = Task {
                 for _ in 0..<100 {
                     await select {
                         any(channels) { channel in
@@ -762,6 +781,7 @@ final class BehaviorTests {
             for await _ in collected {
                 sum += 1
             }
+            await task.value
             
             #expect(100 == sum)
         }
@@ -779,7 +799,7 @@ final class BehaviorTests {
             let signal = Channel<StopSignal>()
             
             
-            Task {
+            let task = Task {
                 var done = false
                 while !done {
                     await select {
@@ -799,6 +819,7 @@ final class BehaviorTests {
             await data <- "foo"
             await data <- "bar"
             await signal <- .done
+            await task.value
         }
     }
     
@@ -823,11 +844,11 @@ final class BehaviorTests {
         #expect(data.syncReceive() == nil)
     }
     
-    @Test func blockingReceive() {
+    @Test func blockingReceive() async {
         let c = Channel<Void>()
         let counter = Channel<Int>()
         
-        Task {
+        let task = Task {
             await c <- ()
             await counter <- 1
             
@@ -848,13 +869,14 @@ final class BehaviorTests {
         c.blockingReceive()
         #expect(counter.blockingReceive() == 3)
         #expect(counter.syncReceive() == nil)
+        await task.value
     }
     
-    @Test func blockingSend() {
+    @Test func blockingSend() async {
         let counter = Channel<Int>()
         let done = Channel<Void>()
         
-        Task {
+        let task = Task {
             await assertChanRx(counter, 1)
             await assertChanRx(counter, 2)
             await assertChanRx(counter, 3)
@@ -865,5 +887,6 @@ final class BehaviorTests {
         counter.blockingSend(2)
         counter.blockingSend(3)
         #expect(done.blockingReceive()! == ())
+        await task.value
     }
 }

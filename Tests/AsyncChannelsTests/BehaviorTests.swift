@@ -763,7 +763,7 @@ final class BehaviorTests {
                 }
             }
             
-            // 1 task recieving from 100 channels and writing the results to 1 channel.
+            // 1 task receiving from 100 channels and writing the results to 1 channel.
             let task = Task {
                 for _ in 0..<100 {
                     await select {

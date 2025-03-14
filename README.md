@@ -12,22 +12,24 @@ If you are familiar with golang and the go ecosystem, you can skip to the [go co
 ## Example
 
 ```swift
-let msg = Channel<String>(capacity: 3)
-let done = Channel<Bool>()
+let stringChannel = Channel<String>(capacity: 3)
 
-Task {
-    for await message in msg {
+// Spawn a task to print the strings.
+let task = Task {
+    // Task will wait until the channel is closed.
+    for await message in stringChannel {
         print(message)
     }
-    await done <- true
 }
 
-await msg <- "Swift"
-await msg <- "❤️"
-await msg <- "Channels"
+// Send some strings
+await stringChannel <- "Swift"
+await stringChannel <- "❤️"
+await stringChannel <- "Channels"
 
-msg.close()
-await <-done
+// Close the channel, allowing the task to complete.
+stringChannel.close()
+await task.value
 ```
 
 ## Benchmarks
@@ -90,18 +92,16 @@ A Channel can be closed. In Swift, the channel receive (`<-`) operator returns `
 
 ```swift
 let a = Channel<String>()
-let done = Channel<Bool>()
 
-Task {
+let task = Task {
     // a will suspend because there is nothing to receive
-    await <-a 
-    await done <- true
+    await <-a
 }
 
 // Close will send `nil` causing a to resume in the task above
-a.close() 
-// done is signaled 
-await <-done
+a.close()
+// Task will resume and complete and return a nil from the received channel.
+_ = await task.value
 ```
 
 ### Sequence operations 
@@ -227,7 +227,7 @@ for c in channels {
     }
 }
 
-// 1 task recieving from 100 channels and writing the results to 1 channel. 
+// 1 task receiving from 100 channels and writing the results to 1 channel. 
 Task {
     for _ in 0..<100 {
         await select {
@@ -251,8 +251,9 @@ for await _ in collected {
 ```swift 
 let a = Channel<String>()
 let b = Channel<String>()
+let result = Channel<String>(capacity: 1)
 
-Task {
+let task = Task {
     await a <- "foo"
 }
 
@@ -263,6 +264,8 @@ await select {
     }
     send("b", to: b)
 }
+await <-result
+await task.value
 ```
 
 

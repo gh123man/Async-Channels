@@ -280,5 +280,4 @@ See the [Examples](/Examples/) folder for real world usage.
 
 I could not have gotten this far without the help from the folks over at [forums.swift.org](https://forums.swift.org/t/async-channels-for-swift-concurrency/70752) and contributors on github. Big shout-out and thank you to:
 - [wadetregaskis](https://forums.swift.org/u/wadetregaskis/summary) for optimizing much of this code and finding the more challenging performance limitations (compiler limitations, locking strategies)
-- [vns](https://forums.swift.org/u/vns/summary) for proposing a `LinkedList` backing data structure
 - [Kuniwak](https://github.com/Kuniwak) for proposing and adding the select `any` function.

@@ -115,16 +115,7 @@ MPSC Async alg Write Contention | `RefData` | `20992`
 
 Async algorithms channel seems to fall apart with write contention on non integer types. 
 
-
-## Why is swift slower than go?
-
-The Swift compiler will not emit specialized implementations of generic structures (in this case, the channel and it's internals). Instead, it will use runtime generics which have significant overhead. 
-
-[wadetregaskis](https://forums.swift.org/u/wadetregaskis/summary) on the swift.org forums [was able to prove this by manually specializing the channel](https://forums.swift.org/t/async-channels-for-swift-concurrency/70752/18). If you have ideas on how to further improve performance, or get the compiler to emit more efficient code, please open an issue or PR! 
-
-Aside from the above limitations, special care has been taken to use efficient locking structures, queueing, and buffering to achieve as much performance as possible. We have noticed that `OSSpinLock` can achieve even greater throughput, however this API is deprecated and can cause issues in real world applications so `os_unfair_lock` is used instead. With full specialization, the locking strategy matters much less - so hopefully we can eventually achieve that with further optimization or compiler updates. 
-
 ## Future work
 
-This has not yet been benchmarked on linux. Linux uses `pthread_mutex_t` so expect results to differ somewhat. 
+I have not published benchmarks on linux. Linux uses `pthread_mutex_t` and from my limited testing, performance is slightly worse than MacOS, in line compared to AsyncAlgorithms, yet still significantly slower than go. 
 

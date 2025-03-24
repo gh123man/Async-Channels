@@ -52,6 +52,39 @@ await runAsyncAlg(String.self)
 await runAsyncAlg(ValueData.self)
 await runAsyncAlg(RefData.self)
 
+class TestData {
+    let foo: String
+    let bar: Int
+    
+    init() {
+        self.foo = "foo"
+        self.bar = 123
+    }
+}
+
+class TestDataDeinit: @unchecked Sendable {
+    let foo: String
+    let bar: Int
+    
+    init() {
+        self.foo = "foo"
+        self.bar = 123
+    }
+    
+    deinit {
+        print("deinited")
+    }
+}
+
+struct TestStruct {
+    var foo: String
+    var bar: Int
+    
+    init() {
+        self.foo = "foo"
+        self.bar = 123
+    }
+}
 
 func run<T: Initializable>(_ type: T.Type) async {
     formatResult(await testSPSC(type))

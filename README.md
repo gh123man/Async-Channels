@@ -12,22 +12,24 @@ If you are familiar with golang and the go ecosystem, you can skip to the [go co
 ## Example
 
 ```swift
-let msg = Channel<String>(capacity: 3)
-let done = Channel<Bool>()
+let stringChannel = Channel<String>(capacity: 3)
 
-Task {
-    for await message in msg {
+// Spawn a task to print the strings.
+let task = Task {
+    // Task will wait until the channel is closed.
+    for await message in stringChannel {
         print(message)
     }
-    await done <- true
 }
 
-await msg <- "Swift"
-await msg <- "❤️"
-await msg <- "Channels"
+// Send some strings
+await stringChannel <- "Swift"
+await stringChannel <- "❤️"
+await stringChannel <- "Channels"
 
-msg.close()
-await <-done
+// Close the channel, allowing the task to complete.
+stringChannel.close()
+await task.value
 ```
 
 ## Benchmarks
@@ -90,18 +92,16 @@ A Channel can be closed. In Swift, the channel receive (`<-`) operator returns `
 
 ```swift
 let a = Channel<String>()
-let done = Channel<Bool>()
 
-Task {
+let task = Task {
     // a will suspend because there is nothing to receive
-    await <-a 
-    await done <- true
+    await <-a
 }
 
 // Close will send `nil` causing a to resume in the task above
-a.close() 
-// done is signaled 
-await <-done
+a.close()
+// Task will resume and complete and return a nil from the received channel.
+_ = await task.value
 ```
 
 ### Sequence operations 
@@ -210,41 +210,6 @@ let result = resultChannel.blockingSend("Hello world")
 
 You an also synchronously poll a channel if it is ready or not without blocking using `syncReceive`. Similarly you can use `syncSend` to send a value synchronously without blocking. Note that in both cases, if the channel is full it will discard the sent value or return `nil` on receive. 
 
-
-
-## WaitGroup
-
-This library also includes a `WaitGroup` implementation. Wait groups are useful when you want to wait for multiple tasks to finish. 
-
-### Example
-
-```swift
-let wg = WaitGroup()
-let signal = Channel<Bool>()
-let done = Channel<Bool>()
-
-// Task that drains the signal channel
-Task {
-    for await _ in signal { }
-    await done <- true
-}
-
-// 100 workers that write to the signal channel
-for _ in 0..<100 {
-    await wg.add(1)
-    Task {
-        await signal <- true
-        await wg.done()
-    }
-}
-// When all workers are done - signal is drained, so wg will be done.
-await wg.wait()
-
-// Closing the signal channel means it's empty, so done is signaled.
-signal.close()
-await <-done
-```
-
 ## Advanced Usage
 This library also includes some extra features that are made possible by the flexibility of Swift's `resultBuilder`. 
 
@@ -262,7 +227,7 @@ for c in channels {
     }
 }
 
-// 1 task recieving from 100 channels and writing the results to 1 channel. 
+// 1 task receiving from 100 channels and writing the results to 1 channel. 
 Task {
     for _ in 0..<100 {
         await select {
@@ -286,8 +251,9 @@ for await _ in collected {
 ```swift 
 let a = Channel<String>()
 let b = Channel<String>()
+let result = Channel<String>(capacity: 1)
 
-Task {
+let task = Task {
     await a <- "foo"
 }
 
@@ -298,6 +264,8 @@ await select {
     }
     send("b", to: b)
 }
+await <-result
+await task.value
 ```
 
 
@@ -312,5 +280,4 @@ See the [Examples](/Examples/) folder for real world usage.
 
 I could not have gotten this far without the help from the folks over at [forums.swift.org](https://forums.swift.org/t/async-channels-for-swift-concurrency/70752) and contributors on github. Big shout-out and thank you to:
 - [wadetregaskis](https://forums.swift.org/u/wadetregaskis/summary) for optimizing much of this code and finding the more challenging performance limitations (compiler limitations, locking strategies)
-- [vns](https://forums.swift.org/u/vns/summary) for proposing a `LinkedList` backing data structure
 - [Kuniwak](https://github.com/Kuniwak) for proposing and adding the select `any` function.

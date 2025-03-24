@@ -4,13 +4,13 @@ infix operator <- :AssignmentPrecedence
 
 @inline(__always)
 @inlinable
-public func <- <T>(c: Channel<T>, value: T) async {
-    await c.send(value)
+public func <- <T>(c: ThrowingChannel<T>, value: T) async throws {
+    try await c.send(value)
 }
 
 @inline(__always)
 @inlinable
-public func <- <T>(value: inout T?, chan: Channel<T>) async {
+public func <- <T>(value: inout T?, chan: ThrowingChannel<T>) async {
     await value = chan.receive()
 }
 
@@ -18,11 +18,11 @@ prefix operator <-
 
 @inline(__always)
 @inlinable
-@discardableResult public prefix func <- <T>(chan: Channel<T>) async -> T? {
+@discardableResult public prefix func <- <T>(chan: ThrowingChannel<T>) async -> T? {
     return await chan.receive()
 }
 
-public final class Channel<T: Sendable>: @unchecked Sendable {
+public final class ThrowingChannel<T: Sendable>: @unchecked Sendable, Selectable {
     
     @usableFromInline
     let channelInternal: ChannelInternal
@@ -39,12 +39,8 @@ public final class Channel<T: Sendable>: @unchecked Sendable {
     /// - Parameter value: The data to send.
     @inline(__always)
     @inlinable
-    public func send(_ value: T) async {
-        do {
-            try await channelInternal.send(toPointer(value))
-        } catch {
-            fatalError("Cannot send on a closed channel")
-        }
+    public func send(_ value: T) async throws {
+        try await channelInternal.send(toPointer(value))
     }
     
     
@@ -64,12 +60,8 @@ public final class Channel<T: Sendable>: @unchecked Sendable {
     /// - Parameter value: The input data.
     @inline(__always)
     @inlinable
-    public func syncSend(_ value: T) -> Bool {
-        do {
-            return try channelInternal.syncSend(toPointer(value))
-        } catch {
-            fatalError("Cannot send on a closed channel")
-        }
+    public func syncSend(_ value: T) throws -> Bool {
+        return try channelInternal.syncSend(toPointer(value))
     }
     
     /// Receive data synchronosly. Returns nil if there is no data or the channel is closed.

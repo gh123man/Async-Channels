@@ -36,54 +36,54 @@ The below results are from running the whole benchmark suit which covers multipl
 
 Test | Type | Execution Time(ms)
 -----|------|---------------
-SPSC | `Int` | `1320`
-MPSC | `Int` | `947`
-SPMC | `Int` | `1195`
-MPMC | `Int` | `1065`
-MPSC Write Contention | `Int` | `1424`
-SPSC Buffered(100) | `Int` | `446`
-MPSC Buffered(100) | `Int` | `799`
-SPMC Buffered(100) | `Int` | `787`
-MPMC Buffered(100) | `Int` | `1071`
-MPSC Write Contention Buffered(100) | `Int` | `1891`
-SyncRW | `Int` | `1752`
-Channel multi-select | `Int` | `1972`
-SPSC | `String` | `1527`
-MPSC | `String` | `1154`
-SPMC | `String` | `1264`
-MPMC | `String` | `1117`
-MPSC Write Contention | `String` | `1544`
-SPSC Buffered(100) | `String` | `623`
-MPSC Buffered(100) | `String` | `895`
-SPMC Buffered(100) | `String` | `873`
-MPMC Buffered(100) | `String` | `1139`
-MPSC Write Contention Buffered(100) | `String` | `1988`
-SyncRW | `String` | `1793`
-Channel multi-select | `String` | `1980`
-SPSC | `ValueData` | `1386`
-MPSC | `ValueData` | `1083`
-SPMC | `ValueData` | `1338`
-MPMC | `ValueData` | `1124`
-MPSC Write Contention | `ValueData` | `1598`
-SPSC Buffered(100) | `ValueData` | `550`
-MPSC Buffered(100) | `ValueData` | `890`
-SPMC Buffered(100) | `ValueData` | `787`
-MPMC Buffered(100) | `ValueData` | `1085`
-MPSC Write Contention Buffered(100) | `ValueData` | `1947`
-SyncRW | `ValueData` | `1741`
-Channel multi-select | `ValueData` | `1970`
-SPSC | `RefData` | `1566`
-MPSC | `RefData` | `1262`
-SPMC | `RefData` | `1251`
-MPMC | `RefData` | `1338`
-MPSC Write Contention | `RefData` | `1599`
-SPSC Buffered(100) | `RefData` | `753`
-MPSC Buffered(100) | `RefData` | `947`
-SPMC Buffered(100) | `RefData` | `959`
-MPMC Buffered(100) | `RefData` | `1348`
-MPSC Write Contention Buffered(100) | `RefData` | `2078`
-SyncRW | `RefData` | `1996`
-Channel multi-select | `RefData` | `2003`
+SPSC | `Int` | `985`
+MPSC | `Int` | `560`
+SPMC | `Int` | `619`
+MPMC | `Int` | `522`
+MPSC Write Contention | `Int` | `734`
+SPSC Buffered(100) | `Int` | `254`
+MPSC Buffered(100) | `Int` | `379`
+SPMC Buffered(100) | `Int` | `377`
+MPMC Buffered(100) | `Int` | `529`
+MPSC Write Contention Buffered(100) | `Int` | `729`
+SyncRW | `Int` | `1039`
+Channel multi-select | `Int` | `1846`
+SPSC | `String` | `1008`
+MPSC | `String` | `565`
+SPMC | `String` | `613`
+MPMC | `String` | `538`
+MPSC Write Contention | `String` | `737`
+SPSC Buffered(100) | `String` | `231`
+MPSC Buffered(100) | `String` | `381`
+SPMC Buffered(100) | `String` | `370`
+MPMC Buffered(100) | `String` | `536`
+MPSC Write Contention Buffered(100) | `String` | `740`
+SyncRW | `String` | `1136`
+Channel multi-select | `String` | `1860`
+SPSC | `ValueData` | `1000`
+MPSC | `ValueData` | `558`
+SPMC | `ValueData` | `612`
+MPMC | `ValueData` | `533`
+MPSC Write Contention | `ValueData` | `736`
+SPSC Buffered(100) | `ValueData` | `229`
+MPSC Buffered(100) | `ValueData` | `375`
+SPMC Buffered(100) | `ValueData` | `351`
+MPMC Buffered(100) | `ValueData` | `516`
+MPSC Write Contention Buffered(100) | `ValueData` | `745`
+SyncRW | `ValueData` | `1116`
+Channel multi-select | `ValueData` | `1862`
+SPSC | `RefData` | `1028`
+MPSC | `RefData` | `604`
+SPMC | `RefData` | `616`
+MPMC | `RefData` | `565`
+MPSC Write Contention | `RefData` | `769`
+SPSC Buffered(100) | `RefData` | `165`
+MPSC Buffered(100) | `RefData` | `346`
+SPMC Buffered(100) | `RefData` | `334`
+MPMC Buffered(100) | `RefData` | `565`
+MPSC Write Contention Buffered(100) | `RefData` | `754`
+SyncRW | `RefData` | `1162`
+Channel multi-select | `RefData` | `1894`
 
 
 ## Async Channels vs Async Algorithms AsyncChannel
@@ -92,39 +92,30 @@ Apple has their own channel implementation in the [swift-async-algorithms packag
 
 Test | Type | Execution Time(ms)
 -----|------|---------------
-SPSC Async alg | `Int` | `3132`
-MPSC Async alg | `Int` | `4476`
-SPMC Async alg | `Int` | `4354`
-MPMC Async alg | `Int` | `5412`
-MPSC Async alg Write Contention | `Int` | `10745`
-SPSC Async alg | `String` | `3024`
-MPSC Async alg | `String` | `4669`
-SPMC Async alg | `String` | `4437`
-MPMC Async alg | `String` | `5474`
-MPSC Async alg Write Contention | `String` | `21313`
-SPSC Async alg | `ValueData` | `2951`
-MPSC Async alg | `ValueData` | `4534`
-SPMC Async alg | `ValueData` | `4420`
-MPMC Async alg | `ValueData` | `5768`
-MPSC Async alg Write Contention | `ValueData` | `23013`
-SPSC Async alg | `RefData` | `3173`
-MPSC Async alg | `RefData` | `5031`
-SPMC Async alg | `RefData` | `4597`
-MPMC Async alg | `RefData` | `5568`
-MPSC Async alg Write Contention | `RefData` | `20117`
+SPSC Async alg | `Int` | `3000`
+MPSC Async alg | `Int` | `4030`
+SPMC Async alg | `Int` | `3951`
+MPMC Async alg | `Int` | `4231`
+MPSC Async alg Write Contention | `Int` | `7343`
+SPSC Async alg | `String` | `3021`
+MPSC Async alg | `String` | `4083`
+SPMC Async alg | `String` | `3937`
+MPMC Async alg | `String` | `4313`
+MPSC Async alg Write Contention | `String` | `21004`
+SPSC Async alg | `ValueData` | `3006`
+MPSC Async alg | `ValueData` | `4052`
+SPMC Async alg | `ValueData` | `3911`
+MPMC Async alg | `ValueData` | `4275`
+MPSC Async alg Write Contention | `ValueData` | `19684`
+SPSC Async alg | `RefData` | `3026`
+MPSC Async alg | `RefData` | `4064`
+SPMC Async alg | `RefData` | `3929`
+MPMC Async alg | `RefData` | `4285`
+MPSC Async alg Write Contention | `RefData` | `20992`
 
 Async algorithms channel seems to fall apart with write contention on non integer types. 
 
-
-## Why is swift slower than go?
-
-The Swift compiler will not emit specialized implementations of generic structures (in this case, the channel and it's internals). Instead, it will use runtime generics which have significant overhead. 
-
-[wadetregaskis](https://forums.swift.org/u/wadetregaskis/summary) on the swift.org forums [was able to prove this by manually specializing the channel](https://forums.swift.org/t/async-channels-for-swift-concurrency/70752/18). If you have ideas on how to further improve performance, or get the compiler to emit more efficient code, please open an issue or PR! 
-
-Aside from the above limitations, special care has been taken to use efficient locking structures, queueing, and buffering to achieve as much performance as possible. We have noticed that `OSSpinLock` can achieve even greater throughput, however this API is deprecated and can cause issues in real world applications so `os_unfair_lock` is used instead. With full specialization, the locking strategy matters much less - so hopefully we can eventually achieve that with further optimization or compiler updates. 
-
 ## Future work
 
-This has not yet been benchmarked on linux. Linux uses `pthread_mutex_t` so expect results to differ somewhat. 
+I have not published benchmarks on linux. Linux uses `pthread_mutex_t` and from my limited testing, performance is slightly worse than MacOS, in line compared to AsyncAlgorithms, yet still significantly slower than go. 
 

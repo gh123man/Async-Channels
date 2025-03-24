@@ -2,13 +2,16 @@ import Foundation
 
 @usableFromInline
 actor SelectSignal {
-    private var signaled = false
-    private var continuation: UnsafeContinuation<Void, Never>?
+    @usableFromInline
+    var signaled = false
+    @usableFromInline
+    var continuation: UnsafeContinuation<Void, Never>?
 
     @usableFromInline
     init() {}
 
-    @usableFromInline
+    @inline(__always)
+    @inlinable
     func wait() async {
         if signaled {
             return
@@ -18,12 +21,16 @@ actor SelectSignal {
         }
     }
     
-    private func _signal() {
+    @inline(__always)
+    @inlinable
+    func _signal() {
         signaled = true
         continuation?.resume()
         continuation = nil
     }
     
+    @inline(__always)
+    @inlinable
     nonisolated func signal() {
         Task {
             await _signal()
@@ -31,33 +38,3 @@ actor SelectSignal {
     }
 }
 
-public actor WaitGroup {
-    
-    private var count = 0
-    private var continuationQueue = LinkedList<UnsafeContinuation<Void, Never>>()
-
-    public init(count: Int = 0) {
-        self.count = count
-    }
-    
-    public func add(_ val: Int) {
-        count += val
-    }
-    
-    public func done() {
-        count -= 1
-        if count <= 0 {
-            count = 0
-            while let waiter = continuationQueue.pop() {
-                waiter.resume()
-            }
-            continuationQueue = LinkedList<UnsafeContinuation<Void, Never>>()
-        }
-    }
-    
-    public func wait() async {
-        await withUnsafeContinuation { continuation in
-            self.continuationQueue.push(continuation)
-        }
-    }
-}

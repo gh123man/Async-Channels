@@ -90,6 +90,8 @@ print(await <-msg) // bar
 
 A Channel can be closed. In Swift, the channel receive (`<-`) operator returns `T?` because a channel read will return `nil` when the channel is closed. If you try to write to a closed channel, a fatalError will be triggered.
 
+If you want to catch the error when sending on a closed channel, you can use `ThrowingChannel`. Note that you cannot `select` a throwing channel at this time. 
+
 ```swift
 let a = Channel<String>()
 

@@ -15,12 +15,16 @@ jobs:
         include:
           - os: ubuntu-latest
             swift: "6.0.3"
+            skip_verify_signature: true
           - os: ubuntu-latest
             swift: "6.3.0"
+            skip_verify_signature: true
           - os: macos-15
             swift: "6.0.3"
+            skip_verify_signature: false
           - os: macos-15
             swift: "6.3.0"
+            skip_verify_signature: false
     runs-on: ${{ matrix.os }}
     steps:
       - uses: actions/checkout@v5
@@ -28,6 +32,7 @@ jobs:
         uses: swift-actions/setup-swift@v3.0.0-beta.1
         with:
           swift-version: ${{ matrix.swift }}
+          skip-verify-signature: ${{ matrix.skip_verify_signature }}
       - name: Show Swift version
         run: swift --version
       - name: Build

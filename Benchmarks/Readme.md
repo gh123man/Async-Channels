@@ -4,7 +4,26 @@ This sub-project attempts to compare async channels with golang.
 
 ## Setup
 
-All swift tests were run with `10` rounds (averaged) with default release optimizations.\
+The Swift benchmark harness now supports configurable rounds, warmups, and JSON output for version-to-version comparisons.
+
+Recommended workflow:
+
+```bash
+BENCHMARK_NAME=swift-6.2.3 Benchmarks/run_swift_benchmarks.sh
+BENCHMARK_NAME=swift-6.3.0 SWIFT_BIN=$HOME/.swiftly/bin/swift Benchmarks/run_swift_benchmarks.sh
+Benchmarks/compare_swift_benchmarks.py \
+  Benchmarks/results/swift-6.2.3-<timestamp>.json \
+  Benchmarks/results/swift-6.3.0-<timestamp>.json
+```
+
+Useful knobs:
+
+```bash
+xcrun swift run -c release --package-path Benchmarks Benchmarks --help
+```
+
+Results written to `Benchmarks/results/` are ignored by git so local benchmark output does not dirty the repository.
+
 All Go tests were written as go micro benchmarks.\
 All tests performed on an M1 max
 
@@ -118,4 +137,3 @@ Async algorithms channel seems to fall apart with write contention on non intege
 ## Future work
 
 I have not published benchmarks on linux. Linux uses `pthread_mutex_t` and from my limited testing, performance is slightly worse than MacOS, in line compared to AsyncAlgorithms, yet still significantly slower than go. 
-

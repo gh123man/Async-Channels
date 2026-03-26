@@ -17,7 +17,7 @@ let package = Package(
             .package(name: "AsyncChannels", path: "../../")
         ],
     targets: [
-        .target(
+        .executableTarget(
             name: "ImageConverter",
             dependencies: [
                .product(name: "AsyncChannels", package: "AsyncChannels")

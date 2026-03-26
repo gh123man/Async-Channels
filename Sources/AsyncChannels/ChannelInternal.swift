@@ -1,7 +1,16 @@
 import Foundation
 import Collections
 
-extension UnsafeRawPointer: @unchecked @retroactive Sendable {}
+@usableFromInline
+struct ChannelPointer: @unchecked Sendable {
+    @usableFromInline
+    let rawValue: UnsafeRawPointer
+
+    @inlinable
+    init(_ rawValue: UnsafeRawPointer) {
+        self.rawValue = rawValue
+    }
+}
 
 public enum ChannelError: Error {
     case closed
@@ -46,9 +55,9 @@ final class ChannelInternal: @unchecked Sendable {
     private var mutex = FastLock()
     private let capacity: Int
     private var closed = false
-    private var buffer: Deque<UnsafeRawPointer>
-    private var sendQueue = Deque<(UnsafeRawPointer, UnsafeContinuation<Void, Never>)>()
-    private var recvQueue = Deque<UnsafeContinuation<UnsafeRawPointer?, Never>>()
+    private var buffer: Deque<ChannelPointer>
+    private var sendQueue = Deque<(ChannelPointer, UnsafeContinuation<Void, Never>)>()
+    private var recvQueue = Deque<UnsafeContinuation<ChannelPointer?, Never>>()
 
     init(capacity: Int = 0) {
         self.capacity = capacity
@@ -68,7 +77,7 @@ final class ChannelInternal: @unchecked Sendable {
         mutex.lock()
         
         if let p = nonBlockingReceive() {
-            return p
+            return p.rawValue
         }
         
         if closed {
@@ -85,7 +94,7 @@ final class ChannelInternal: @unchecked Sendable {
     func sendOrListen(_ sema: SelectSignal, p: UnsafeRawPointer) throws -> Bool {
         mutex.lock()
         
-        if try nonBlockingSend(p) {
+        if try nonBlockingSend(ChannelPointer(p)) {
             return true
         }
         
@@ -95,7 +104,7 @@ final class ChannelInternal: @unchecked Sendable {
     }
     
     @inline(__always)
-    private func nonBlockingSend(_ p: UnsafeRawPointer) throws -> Bool {
+    private func nonBlockingSend(_ p: ChannelPointer) throws -> Bool {
         if closed {
             mutex.unlock()
             throw ChannelError.closed
@@ -122,12 +131,12 @@ final class ChannelInternal: @unchecked Sendable {
     func send(_ p: UnsafeRawPointer) async throws {
         mutex.lock()
         
-        if try nonBlockingSend(p) {
+        if try nonBlockingSend(ChannelPointer(p)) {
             return
         }
         
         await withUnsafeContinuation { continuation in
-            sendQueue.append((p, continuation))
+            sendQueue.append((ChannelPointer(p), continuation))
             let waiter = selectWaiter
             mutex.unlock()
             waiter?.signal()
@@ -138,7 +147,7 @@ final class ChannelInternal: @unchecked Sendable {
     @usableFromInline
     func syncSend(_ p: UnsafeRawPointer) throws -> Bool {
         mutex.lock()
-        if try nonBlockingSend(p) {
+        if try nonBlockingSend(ChannelPointer(p)) {
             return true
         }
         mutex.unlock()
@@ -147,7 +156,7 @@ final class ChannelInternal: @unchecked Sendable {
     
     @inline(__always)
     @usableFromInline
-    func nonBlockingReceive() -> UnsafeRawPointer? {
+    func nonBlockingReceive() -> ChannelPointer? {
         if buffer.isEmpty {
             if !sendQueue.isEmpty {
                 let (p, continuation) = sendQueue.popFirst()!
@@ -178,7 +187,7 @@ final class ChannelInternal: @unchecked Sendable {
         mutex.lock()
 
         if let p = nonBlockingReceive() {
-            return p
+            return p.rawValue
         }
         
         if closed {
@@ -192,7 +201,7 @@ final class ChannelInternal: @unchecked Sendable {
             mutex.unlock()
             waiter?.signal()
         }
-        return p
+        return p?.rawValue
     }
     
     @inline(__always)
@@ -200,7 +209,7 @@ final class ChannelInternal: @unchecked Sendable {
     func syncReceive() -> UnsafeRawPointer? {
         mutex.lock()
         if let p = nonBlockingReceive() {
-            return p
+            return p.rawValue
         }
         mutex.unlock()
         return nil
@@ -218,4 +227,3 @@ final class ChannelInternal: @unchecked Sendable {
         }
     }
 }
-

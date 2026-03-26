@@ -19,7 +19,7 @@ let package = Package(
         .package(url: "https://github.com/apple/swift-async-algorithms", from: "1.0.0")
     ],
     targets: [
-        .target(
+        .executableTarget(
             name: "Benchmarks",
             dependencies: [
                 .product(name: "AsyncChannels", package: "AsyncChannels"),

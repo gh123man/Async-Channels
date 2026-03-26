@@ -10,6 +10,7 @@ SELECT_WRITES="${SELECT_WRITES:-100000}"
 BUFFER="${BUFFER:-100}"
 OUTPUT_DIR="${OUTPUT_DIR:-Benchmarks/results}"
 BENCHMARK_NAME="${BENCHMARK_NAME:-}"
+UPDATE_README="${UPDATE_README:-0}"
 
 mkdir -p "${OUTPUT_DIR}"
 
@@ -38,3 +39,7 @@ Benchmarks/parse_go_benchmarks.py \
   "${BUFFER}" > "${JSON_OUTPUT_PATH}"
 
 echo "Finished: ${JSON_OUTPUT_PATH}"
+
+if [[ "${UPDATE_README}" == "1" ]]; then
+  GO_REPORT="${JSON_OUTPUT_PATH}" GO_RAW_REPORT="${RAW_OUTPUT_PATH}" Benchmarks/update_benchmark_readme.sh
+fi

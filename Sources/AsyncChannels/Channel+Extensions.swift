@@ -31,7 +31,7 @@ extension Channel {
     /// Do not use this function in an async task!
     public func blockingReceive() -> T? {
         let semaphore = DispatchSemaphore(value: 0)
-        var val: T?
+        nonisolated(unsafe) var val: T?
         Task {
             val = await <-self
             semaphore.signal()

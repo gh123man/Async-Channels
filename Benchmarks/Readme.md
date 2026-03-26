@@ -16,6 +16,16 @@ Benchmarks/compare_swift_benchmarks.py \
   Benchmarks/results/swift-6.3.0-<timestamp>.json
 ```
 
+For cross-library comparison on the same machine:
+
+```bash
+BENCHMARK_NAME=swift-6.3.0 SWIFT_BIN=$HOME/.swiftly/bin/swift Benchmarks/run_swift_benchmarks.sh
+BENCHMARK_NAME=go-1.26.1 Benchmarks/run_go_benchmarks.sh
+Benchmarks/compare_library_benchmarks.py \
+  Benchmarks/results/swift-6.3.0-<timestamp>.json \
+  Benchmarks/results/go-1.26.1-<timestamp>.json
+```
+
 Useful knobs:
 
 ```bash

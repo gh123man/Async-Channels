@@ -5,6 +5,12 @@ import sys
 from collections import defaultdict
 
 
+def sort_libraries(libraries: set[str]) -> list[str]:
+    preferred = ["Go", "AsyncChannels", "AsyncAlgorithms"]
+    remainder = sorted(library for library in libraries if library not in preferred)
+    return [library for library in preferred if library in libraries] + remainder
+
+
 def load(path: str) -> dict:
     with open(path, "r", encoding="utf-8") as handle:
         return json.load(handle)
@@ -21,7 +27,7 @@ def main() -> int:
         for result in report["results"]:
             merged[(result["name"], result["type"])][result["library"]] = result
 
-    libraries = sorted({library for values in merged.values() for library in values})
+    libraries = sort_libraries({library for values in merged.values() for library in values})
     if not libraries:
         return 0
 
@@ -33,6 +39,8 @@ def main() -> int:
 
     for (name, result_type), values in sorted(merged.items()):
         if len(values) < 2:
+            continue
+        if "Go" in libraries and "Go" not in values:
             continue
         row = [name, f"`{result_type}`"]
         for library in libraries:

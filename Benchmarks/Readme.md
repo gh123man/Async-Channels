@@ -60,85 +60,31 @@ These sections are generated from benchmark result files in `Benchmarks/results/
 - Swift host: `brians-macbook-air.local`
 - Swift rounds: `5` measured, `1` warmup
 - Swift writes: `1000000`, sync writes: `5000000`, select writes/channel: `100000`, buffer: `100`
-- Baseline Swift toolchain: `swift-6.2.3`
-- Baseline Swift host: `brians-macbook-air.local`
-- Baseline Swift rounds: `5` measured, `1` warmup
-- Baseline Swift writes: `1000000`, sync writes: `5000000`, select writes/channel: `100000`, buffer: `100`
 
-Baseline Swift report: `Benchmarks/results/swift-6.2.3-20260326-185306.json`
-Candidate Swift report: `Benchmarks/results/swift-6.3.0-20260326-191022.json`
+Swift report: `Benchmarks/results/swift-6.3.0-20260326-191022.json`
+- Go toolchain: `go_version_go1.26.1_darwin_arm64`
+- Go host: `Apple M5`
+- Go rounds: `5` measured, `0` warmup
+- Go writes: `1000000`, sync writes: `5000000`, select writes/channel: `100000`, buffer: `100`
+Go report: `Benchmarks/results/go_version_go1.26.1_darwin_arm64-20260326-193146.json`
 
-**Swift Toolchain Comparison**
-Library | Test | Type | Baseline Avg (ms) | Candidate Avg (ms) | Delta %
---- | --- | --- | --- | --- | ---
-AsyncAlgorithms | MPMC | `Int` | `7027.25` | `5215.65` | `-25.78%`
-AsyncAlgorithms | MPMC | `RefData` | `7504.62` | `5588.75` | `-25.53%`
-AsyncAlgorithms | MPMC | `String` | `8709.50` | `5587.76` | `-35.84%`
-AsyncAlgorithms | MPMC | `ValueData` | `9590.54` | `5014.12` | `-47.72%`
-AsyncAlgorithms | MPSC | `Int` | `4788.59` | `3761.30` | `-21.45%`
-AsyncAlgorithms | MPSC | `RefData` | `5180.12` | `3945.61` | `-23.83%`
-AsyncAlgorithms | MPSC | `String` | `6355.52` | `4179.43` | `-34.24%`
-AsyncAlgorithms | MPSC | `ValueData` | `6757.28` | `4236.05` | `-37.31%`
-AsyncAlgorithms | MPSC Write Contention | `Int` | `9298.62` | `5591.63` | `-39.87%`
-AsyncAlgorithms | MPSC Write Contention | `RefData` | `8655.29` | `6262.41` | `-27.65%`
-AsyncAlgorithms | MPSC Write Contention | `String` | `10685.25` | `6139.55` | `-42.54%`
-AsyncAlgorithms | MPSC Write Contention | `ValueData` | `10456.41` | `5252.34` | `-49.77%`
-AsyncAlgorithms | SPMC | `Int` | `4789.23` | `3622.70` | `-24.36%`
-AsyncAlgorithms | SPMC | `RefData` | `5223.19` | `4114.84` | `-21.22%`
-AsyncAlgorithms | SPMC | `String` | `6353.19` | `3890.67` | `-38.76%`
-AsyncAlgorithms | SPMC | `ValueData` | `6499.68` | `3986.87` | `-38.66%`
-AsyncAlgorithms | SPSC | `Int` | `2871.85` | `2305.84` | `-19.71%`
-AsyncAlgorithms | SPSC | `RefData` | `2927.92` | `2418.31` | `-17.41%`
-AsyncAlgorithms | SPSC | `String` | `3467.80` | `2350.12` | `-32.23%`
-AsyncAlgorithms | SPSC | `ValueData` | `4047.56` | `2420.69` | `-40.19%`
-AsyncChannels | Channel multi-select | `Int` | `1695.74` | `1381.14` | `-18.55%`
-AsyncChannels | Channel multi-select | `RefData` | `1893.57` | `1176.29` | `-37.88%`
-AsyncChannels | Channel multi-select | `String` | `1878.38` | `1362.78` | `-27.45%`
-AsyncChannels | Channel multi-select | `ValueData` | `2183.19` | `1449.17` | `-33.62%`
-AsyncChannels | MPMC | `Int` | `933.62` | `773.33` | `-17.17%`
-AsyncChannels | MPMC | `RefData` | `983.93` | `725.90` | `-26.22%`
-AsyncChannels | MPMC | `String` | `930.62` | `818.39` | `-12.06%`
-AsyncChannels | MPMC | `ValueData` | `977.47` | `815.51` | `-16.57%`
-AsyncChannels | MPMC Buffered(100) | `Int` | `454.85` | `459.06` | `+0.92%`
-AsyncChannels | MPMC Buffered(100) | `RefData` | `649.37` | `501.98` | `-22.70%`
-AsyncChannels | MPMC Buffered(100) | `String` | `495.95` | `445.53` | `-10.17%`
-AsyncChannels | MPMC Buffered(100) | `ValueData` | `602.29` | `499.51` | `-17.06%`
-AsyncChannels | MPSC | `Int` | `476.00` | `332.49` | `-30.15%`
-AsyncChannels | MPSC | `RefData` | `638.52` | `323.41` | `-49.35%`
-AsyncChannels | MPSC | `String` | `599.85` | `330.18` | `-44.96%`
-AsyncChannels | MPSC | `ValueData` | `640.65` | `315.16` | `-50.81%`
-AsyncChannels | MPSC Buffered(100) | `Int` | `264.37` | `157.45` | `-40.44%`
-AsyncChannels | MPSC Buffered(100) | `RefData` | `474.13` | `147.87` | `-68.81%`
-AsyncChannels | MPSC Buffered(100) | `String` | `365.77` | `212.38` | `-41.94%`
-AsyncChannels | MPSC Buffered(100) | `ValueData` | `481.41` | `230.82` | `-52.05%`
-AsyncChannels | MPSC Write Contention | `Int` | `511.44` | `385.93` | `-24.54%`
-AsyncChannels | MPSC Write Contention | `RefData` | `730.74` | `376.60` | `-48.46%`
-AsyncChannels | MPSC Write Contention | `String` | `681.47` | `390.94` | `-42.63%`
-AsyncChannels | MPSC Write Contention | `ValueData` | `697.42` | `419.93` | `-39.79%`
-AsyncChannels | MPSC Write Contention Buffered(100) | `Int` | `520.99` | `395.09` | `-24.17%`
-AsyncChannels | MPSC Write Contention Buffered(100) | `RefData` | `788.64` | `356.57` | `-54.79%`
-AsyncChannels | MPSC Write Contention Buffered(100) | `String` | `650.07` | `435.39` | `-33.02%`
-AsyncChannels | MPSC Write Contention Buffered(100) | `ValueData` | `725.20` | `424.92` | `-41.41%`
-AsyncChannels | SPMC | `Int` | `589.31` | `320.46` | `-45.62%`
-AsyncChannels | SPMC | `RefData` | `631.42` | `302.77` | `-52.05%`
-AsyncChannels | SPMC | `String` | `510.73` | `297.05` | `-41.84%`
-AsyncChannels | SPMC | `ValueData` | `632.23` | `307.19` | `-51.41%`
-AsyncChannels | SPMC Buffered(100) | `Int` | `283.86` | `219.90` | `-22.53%`
-AsyncChannels | SPMC Buffered(100) | `RefData` | `428.43` | `180.02` | `-57.98%`
-AsyncChannels | SPMC Buffered(100) | `String` | `319.52` | `228.32` | `-28.54%`
-AsyncChannels | SPMC Buffered(100) | `ValueData` | `424.22` | `217.26` | `-48.79%`
-AsyncChannels | SPSC | `Int` | `432.39` | `300.47` | `-30.51%`
-AsyncChannels | SPSC | `RefData` | `594.98` | `355.01` | `-40.33%`
-AsyncChannels | SPSC | `String` | `705.70` | `332.97` | `-52.82%`
-AsyncChannels | SPSC | `ValueData` | `600.47` | `346.81` | `-42.24%`
-AsyncChannels | SPSC Buffered(100) | `Int` | `494.76` | `439.99` | `-11.07%`
-AsyncChannels | SPSC Buffered(100) | `RefData` | `622.45` | `368.84` | `-40.74%`
-AsyncChannels | SPSC Buffered(100) | `String` | `609.59` | `469.59` | `-22.97%`
-AsyncChannels | SPSC Buffered(100) | `ValueData` | `821.87` | `485.11` | `-40.97%`
-AsyncChannels | SyncRW | `Int` | `487.80` | `327.48` | `-32.87%`
-AsyncChannels | SyncRW | `RefData` | `669.29` | `363.38` | `-45.71%`
-AsyncChannels | SyncRW | `String` | `651.87` | `357.71` | `-45.13%`
-AsyncChannels | SyncRW | `ValueData` | `702.92` | `356.54` | `-49.28%`
+**Go Baseline Comparison**
+Go is the baseline. Negative percentages mean the Swift library is faster than Go for that scenario.
+
+Test | Type | Go Avg (ms) | AsyncChannels Avg (ms) | AsyncAlgorithms Avg (ms) | AsyncChannels vs Go | AsyncAlgorithms vs Go
+--- | --- | --- | --- | --- | --- | ---
+Channel multi-select | `Int` | `552.71` | `1381.14` |  | `+149.88%` | 
+MPMC | `Int` | `241.73` | `773.33` | `5215.65` | `+219.91%` | `+2057.62%`
+MPMC Buffered(100) | `Int` | `138.23` | `459.06` |  | `+232.10%` | 
+MPSC | `Int` | `244.90` | `332.49` | `3761.30` | `+35.77%` | `+1435.87%`
+MPSC Buffered(100) | `Int` | `80.55` | `157.45` |  | `+95.48%` | 
+MPSC Write Contention | `Int` | `503.68` | `385.93` | `5591.63` | `-23.38%` | `+1010.15%`
+MPSC Write Contention Buffered(100) | `Int` | `642.26` | `395.09` |  | `-38.48%` | 
+SPMC | `Int` | `259.52` | `320.46` | `3622.70` | `+23.49%` | `+1295.95%`
+SPMC Buffered(100) | `Int` | `124.92` | `219.90` |  | `+76.03%` | 
+SPSC | `Int` | `99.82` | `300.47` | `2305.84` | `+201.01%` | `+2209.98%`
+SPSC Buffered(100) | `Int` | `32.32` | `439.99` |  | `+1261.22%` | 
+SyncRW | `Int` | `205.30` | `327.48` |  | `+59.52%` | 
 
 **AsyncChannels Results**
 Test | Type | Avg (ms) | Median (ms) | Ops/s
@@ -216,42 +162,83 @@ SPMC | `RefData` | `4114.84` | `4196.80` | `243023`
 MPMC | `RefData` | `5588.75` | `5980.78` | `178931`
 MPSC Write Contention | `RefData` | `6262.41` | `6268.68` | `159683`
 
-- Go toolchain: `go_version_go1.26.1_darwin_arm64`
-- Go host: `Apple M5`
-- Go rounds: `5` measured, `0` warmup
-- Go writes: `1000000`, sync writes: `5000000`, select writes/channel: `100000`, buffer: `100`
-Go report: `Benchmarks/results/go_version_go1.26.1_darwin_arm64-20260326-193146.json`
+- Baseline Swift toolchain: `swift-6.2.3`
+- Baseline Swift host: `brians-macbook-air.local`
+- Baseline Swift rounds: `5` measured, `1` warmup
+- Baseline Swift writes: `1000000`, sync writes: `5000000`, select writes/channel: `100000`, buffer: `100`
+Baseline Swift report: `Benchmarks/results/swift-6.2.3-20260326-185306.json`
 
-**Cross-Library Comparison**
-Test | Type | AsyncAlgorithms Avg (ms) | AsyncChannels Avg (ms) | Go Avg (ms) | AsyncAlgorithms vs Go | AsyncChannels vs Go
---- | --- | --- | --- | --- | --- | ---
-Channel multi-select | `Int` |  | `1381.14` | `552.71` |  | `+149.88%`
-MPMC | `Int` | `5215.65` | `773.33` | `241.73` | `+2057.62%` | `+219.91%`
-MPMC | `RefData` | `5588.75` | `725.90` | 
-MPMC | `String` | `5587.76` | `818.39` | 
-MPMC | `ValueData` | `5014.12` | `815.51` | 
-MPMC Buffered(100) | `Int` |  | `459.06` | `138.23` |  | `+232.10%`
-MPSC | `Int` | `3761.30` | `332.49` | `244.90` | `+1435.87%` | `+35.77%`
-MPSC | `RefData` | `3945.61` | `323.41` | 
-MPSC | `String` | `4179.43` | `330.18` | 
-MPSC | `ValueData` | `4236.05` | `315.16` | 
-MPSC Buffered(100) | `Int` |  | `157.45` | `80.55` |  | `+95.48%`
-MPSC Write Contention | `Int` | `5591.63` | `385.93` | `503.68` | `+1010.15%` | `-23.38%`
-MPSC Write Contention | `RefData` | `6262.41` | `376.60` | 
-MPSC Write Contention | `String` | `6139.55` | `390.94` | 
-MPSC Write Contention | `ValueData` | `5252.34` | `419.93` | 
-MPSC Write Contention Buffered(100) | `Int` |  | `395.09` | `642.26` |  | `-38.48%`
-SPMC | `Int` | `3622.70` | `320.46` | `259.52` | `+1295.95%` | `+23.49%`
-SPMC | `RefData` | `4114.84` | `302.77` | 
-SPMC | `String` | `3890.67` | `297.05` | 
-SPMC | `ValueData` | `3986.87` | `307.19` | 
-SPMC Buffered(100) | `Int` |  | `219.90` | `124.92` |  | `+76.03%`
-SPSC | `Int` | `2305.84` | `300.47` | `99.82` | `+2209.98%` | `+201.01%`
-SPSC | `RefData` | `2418.31` | `355.01` | 
-SPSC | `String` | `2350.12` | `332.97` | 
-SPSC | `ValueData` | `2420.69` | `346.81` | 
-SPSC Buffered(100) | `Int` |  | `439.99` | `32.32` |  | `+1261.22%`
-SyncRW | `Int` |  | `327.48` | `205.30` |  | `+59.52%`
+**Historical Swift Toolchain Comparison**
+Library | Test | Type | Baseline Avg (ms) | Candidate Avg (ms) | Delta %
+--- | --- | --- | --- | --- | ---
+AsyncAlgorithms | MPMC | `Int` | `7027.25` | `5215.65` | `-25.78%`
+AsyncAlgorithms | MPMC | `RefData` | `7504.62` | `5588.75` | `-25.53%`
+AsyncAlgorithms | MPMC | `String` | `8709.50` | `5587.76` | `-35.84%`
+AsyncAlgorithms | MPMC | `ValueData` | `9590.54` | `5014.12` | `-47.72%`
+AsyncAlgorithms | MPSC | `Int` | `4788.59` | `3761.30` | `-21.45%`
+AsyncAlgorithms | MPSC | `RefData` | `5180.12` | `3945.61` | `-23.83%`
+AsyncAlgorithms | MPSC | `String` | `6355.52` | `4179.43` | `-34.24%`
+AsyncAlgorithms | MPSC | `ValueData` | `6757.28` | `4236.05` | `-37.31%`
+AsyncAlgorithms | MPSC Write Contention | `Int` | `9298.62` | `5591.63` | `-39.87%`
+AsyncAlgorithms | MPSC Write Contention | `RefData` | `8655.29` | `6262.41` | `-27.65%`
+AsyncAlgorithms | MPSC Write Contention | `String` | `10685.25` | `6139.55` | `-42.54%`
+AsyncAlgorithms | MPSC Write Contention | `ValueData` | `10456.41` | `5252.34` | `-49.77%`
+AsyncAlgorithms | SPMC | `Int` | `4789.23` | `3622.70` | `-24.36%`
+AsyncAlgorithms | SPMC | `RefData` | `5223.19` | `4114.84` | `-21.22%`
+AsyncAlgorithms | SPMC | `String` | `6353.19` | `3890.67` | `-38.76%`
+AsyncAlgorithms | SPMC | `ValueData` | `6499.68` | `3986.87` | `-38.66%`
+AsyncAlgorithms | SPSC | `Int` | `2871.85` | `2305.84` | `-19.71%`
+AsyncAlgorithms | SPSC | `RefData` | `2927.92` | `2418.31` | `-17.41%`
+AsyncAlgorithms | SPSC | `String` | `3467.80` | `2350.12` | `-32.23%`
+AsyncAlgorithms | SPSC | `ValueData` | `4047.56` | `2420.69` | `-40.19%`
+AsyncChannels | Channel multi-select | `Int` | `1695.74` | `1381.14` | `-18.55%`
+AsyncChannels | Channel multi-select | `RefData` | `1893.57` | `1176.29` | `-37.88%`
+AsyncChannels | Channel multi-select | `String` | `1878.38` | `1362.78` | `-27.45%`
+AsyncChannels | Channel multi-select | `ValueData` | `2183.19` | `1449.17` | `-33.62%`
+AsyncChannels | MPMC | `Int` | `933.62` | `773.33` | `-17.17%`
+AsyncChannels | MPMC | `RefData` | `983.93` | `725.90` | `-26.22%`
+AsyncChannels | MPMC | `String` | `930.62` | `818.39` | `-12.06%`
+AsyncChannels | MPMC | `ValueData` | `977.47` | `815.51` | `-16.57%`
+AsyncChannels | MPMC Buffered(100) | `Int` | `454.85` | `459.06` | `+0.92%`
+AsyncChannels | MPMC Buffered(100) | `RefData` | `649.37` | `501.98` | `-22.70%`
+AsyncChannels | MPMC Buffered(100) | `String` | `495.95` | `445.53` | `-10.17%`
+AsyncChannels | MPMC Buffered(100) | `ValueData` | `602.29` | `499.51` | `-17.06%`
+AsyncChannels | MPSC | `Int` | `476.00` | `332.49` | `-30.15%`
+AsyncChannels | MPSC | `RefData` | `638.52` | `323.41` | `-49.35%`
+AsyncChannels | MPSC | `String` | `599.85` | `330.18` | `-44.96%`
+AsyncChannels | MPSC | `ValueData` | `640.65` | `315.16` | `-50.81%`
+AsyncChannels | MPSC Buffered(100) | `Int` | `264.37` | `157.45` | `-40.44%`
+AsyncChannels | MPSC Buffered(100) | `RefData` | `474.13` | `147.87` | `-68.81%`
+AsyncChannels | MPSC Buffered(100) | `String` | `365.77` | `212.38` | `-41.94%`
+AsyncChannels | MPSC Buffered(100) | `ValueData` | `481.41` | `230.82` | `-52.05%`
+AsyncChannels | MPSC Write Contention | `Int` | `511.44` | `385.93` | `-24.54%`
+AsyncChannels | MPSC Write Contention | `RefData` | `730.74` | `376.60` | `-48.46%`
+AsyncChannels | MPSC Write Contention | `String` | `681.47` | `390.94` | `-42.63%`
+AsyncChannels | MPSC Write Contention | `ValueData` | `697.42` | `419.93` | `-39.79%`
+AsyncChannels | MPSC Write Contention Buffered(100) | `Int` | `520.99` | `395.09` | `-24.17%`
+AsyncChannels | MPSC Write Contention Buffered(100) | `RefData` | `788.64` | `356.57` | `-54.79%`
+AsyncChannels | MPSC Write Contention Buffered(100) | `String` | `650.07` | `435.39` | `-33.02%`
+AsyncChannels | MPSC Write Contention Buffered(100) | `ValueData` | `725.20` | `424.92` | `-41.41%`
+AsyncChannels | SPMC | `Int` | `589.31` | `320.46` | `-45.62%`
+AsyncChannels | SPMC | `RefData` | `631.42` | `302.77` | `-52.05%`
+AsyncChannels | SPMC | `String` | `510.73` | `297.05` | `-41.84%`
+AsyncChannels | SPMC | `ValueData` | `632.23` | `307.19` | `-51.41%`
+AsyncChannels | SPMC Buffered(100) | `Int` | `283.86` | `219.90` | `-22.53%`
+AsyncChannels | SPMC Buffered(100) | `RefData` | `428.43` | `180.02` | `-57.98%`
+AsyncChannels | SPMC Buffered(100) | `String` | `319.52` | `228.32` | `-28.54%`
+AsyncChannels | SPMC Buffered(100) | `ValueData` | `424.22` | `217.26` | `-48.79%`
+AsyncChannels | SPSC | `Int` | `432.39` | `300.47` | `-30.51%`
+AsyncChannels | SPSC | `RefData` | `594.98` | `355.01` | `-40.33%`
+AsyncChannels | SPSC | `String` | `705.70` | `332.97` | `-52.82%`
+AsyncChannels | SPSC | `ValueData` | `600.47` | `346.81` | `-42.24%`
+AsyncChannels | SPSC Buffered(100) | `Int` | `494.76` | `439.99` | `-11.07%`
+AsyncChannels | SPSC Buffered(100) | `RefData` | `622.45` | `368.84` | `-40.74%`
+AsyncChannels | SPSC Buffered(100) | `String` | `609.59` | `469.59` | `-22.97%`
+AsyncChannels | SPSC Buffered(100) | `ValueData` | `821.87` | `485.11` | `-40.97%`
+AsyncChannels | SyncRW | `Int` | `487.80` | `327.48` | `-32.87%`
+AsyncChannels | SyncRW | `RefData` | `669.29` | `363.38` | `-45.71%`
+AsyncChannels | SyncRW | `String` | `651.87` | `357.71` | `-45.13%`
+AsyncChannels | SyncRW | `ValueData` | `702.92` | `356.54` | `-49.28%`
 
 **Raw Go Benchmark Output**
 ```text
@@ -323,6 +310,8 @@ PASS
 ok  	benchmarks	142.460s
 ```
 <!-- benchmark-generated:end -->
+
+
 
 
 

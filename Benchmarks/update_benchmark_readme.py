@@ -34,6 +34,12 @@ def markdown_table(headers: list[str], rows: Iterable[list[str]]) -> str:
     return "\n".join(lines)
 
 
+def sort_libraries(libraries: set[str]) -> list[str]:
+    preferred = ["Go", "AsyncChannels", "AsyncAlgorithms"]
+    remainder = sorted(library for library in libraries if library not in preferred)
+    return [library for library in preferred if library in libraries] + remainder
+
+
 def render_report_table(report: dict, library: str) -> str:
     rows = []
     for result in report["results"]:
@@ -93,7 +99,7 @@ def render_library_comparison(reports: list[dict]) -> str:
         for result in report["results"]:
             merged.setdefault((result["name"], result["type"]), {})[result["library"]] = result
 
-    libraries = sorted({result["library"] for report in reports for result in report["results"]})
+    libraries = sort_libraries({result["library"] for report in reports for result in report["results"]})
     headers = ["Test", "Type"] + [f"{library} Avg (ms)" for library in libraries]
     if "Go" in libraries:
         headers += [f"{library} vs Go" for library in libraries if library != "Go"]
@@ -101,6 +107,8 @@ def render_library_comparison(reports: list[dict]) -> str:
     rows = []
     for (name, result_type), values in sorted(merged.items()):
         if len(values) < 2:
+            continue
+        if "Go" in libraries and "Go" not in values:
             continue
         row = [name, f"`{result_type}`"]
         for library in libraries:
@@ -152,16 +160,23 @@ def render_generated_section(
         render_environment(swift_report, "Swift"),
     ]
 
-    if baseline_swift_report:
+    parts.extend(
+        [
+            "",
+            f"Swift report: `{source_paths['swift'].as_posix()}`",
+        ]
+    )
+
+    if go_report:
         parts.extend(
             [
-                render_environment(baseline_swift_report, "Baseline Swift"),
+                render_environment(go_report, "Go"),
+                f"Go report: `{source_paths['go'].as_posix()}`",
                 "",
-                f"Baseline Swift report: `{source_paths['baseline_swift'].as_posix()}`",
-                f"Candidate Swift report: `{source_paths['swift'].as_posix()}`",
+                "**Go Baseline Comparison**",
+                "Go is the baseline. Negative percentages mean the Swift library is faster than Go for that scenario.",
                 "",
-                "**Swift Toolchain Comparison**",
-                render_swift_comparison(baseline_swift_report, swift_report),
+                render_library_comparison([swift_report, go_report]),
             ]
         )
 
@@ -182,15 +197,15 @@ def render_generated_section(
             ]
         )
 
-    if go_report:
+    if baseline_swift_report:
         parts.extend(
             [
                 "",
-                render_environment(go_report, "Go"),
-                f"Go report: `{source_paths['go'].as_posix()}`",
+                render_environment(baseline_swift_report, "Baseline Swift"),
+                f"Baseline Swift report: `{source_paths['baseline_swift'].as_posix()}`",
                 "",
-                "**Cross-Library Comparison**",
-                render_library_comparison([swift_report, go_report]),
+                "**Historical Swift Toolchain Comparison**",
+                render_swift_comparison(baseline_swift_report, swift_report),
             ]
         )
 

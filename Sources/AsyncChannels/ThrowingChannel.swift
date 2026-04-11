@@ -40,7 +40,13 @@ public final class ThrowingChannel<T: Sendable>: @unchecked Sendable, Selectable
     @inline(__always)
     @inlinable
     public func send(_ value: T) async throws {
-        try await channelInternal.send(toPointer(value))
+        let pointer = toPointer(value)
+        do {
+            try await channelInternal.send(pointer)
+        } catch {
+            _ = toValue(pointer) as T?
+            throw error
+        }
     }
     
     
@@ -61,7 +67,13 @@ public final class ThrowingChannel<T: Sendable>: @unchecked Sendable, Selectable
     @inline(__always)
     @inlinable
     public func syncSend(_ value: T) throws -> Bool {
-        return try channelInternal.syncSend(toPointer(value))
+        let pointer = toPointer(value)
+        do {
+            return try channelInternal.syncSend(pointer)
+        } catch {
+            _ = toValue(pointer) as T?
+            throw error
+        }
     }
     
     /// Receive data synchronosly. Returns nil if there is no data or the channel is closed.
@@ -81,4 +93,3 @@ public final class ThrowingChannel<T: Sendable>: @unchecked Sendable, Selectable
         channelInternal.close()
     }
 }
-

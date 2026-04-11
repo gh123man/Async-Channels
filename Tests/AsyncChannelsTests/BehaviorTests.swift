@@ -167,6 +167,39 @@ final class BehaviorTests {
             #expect(10 == count)
         }
     }
+
+    @Test func closeWakesBlockedThrowingSender() async {
+        await stress(100) {
+            let channel = ThrowingChannel<Int>(capacity: 1)
+            let started = Channel<Bool>()
+
+            try! await channel <- 1
+
+            let task = Task {
+                await started <- true
+                do {
+                    try await channel <- 2
+                    return false
+                } catch ChannelError.closed {
+                    return true
+                } catch {
+                    Issue.record()
+                    return false
+                }
+            }
+
+            await <-started
+            for _ in 0..<10 {
+                await Task.yield()
+            }
+
+            channel.close()
+
+            #expect(await task.value)
+            let count = await channel.reduce(0) { $0 + $1 }
+            #expect(count == 1)
+        }
+    }
     
     @Test func closeEmpty() async {
         await stress {

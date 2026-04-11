@@ -48,6 +48,21 @@ xcrun swift test
 $HOME/.swiftly/bin/swift test
 ```
 
+Thread Sanitizer:
+
+```bash
+swift test --sanitize=thread
+```
+
+Current status on this machine/toolchain:
+
+- `swift test --sanitize=thread` on Swift 6.2.3 still reports continuation-boundary races in `ChannelInternal.swift`.
+- The reports land on `withUnsafeContinuation`/`resume` interactions rather than unlocked channel state.
+- A real close-path bug did exist separately: blocked senders were not resumed on `close()`. Keep coverage for that behavior.
+- Treat the remaining sanitizer warnings as unresolved and tooling-suspect, not as a reason by themselves to accept major benchmark regressions.
+- Track follow-up investigation in GitHub issue [#25](https://github.com/gh123man/Async-Channels/issues/25).
+- If you investigate them further, capture the exact toolchain, platform, reproduction command, and stack traces in a GitHub issue before changing hot paths.
+
 ## Benchmark Layout
 
 Swift benchmark files:
@@ -160,5 +175,6 @@ brew install go
 ## Practical Advice For Performance Work
 
 - If you change queueing, continuation handoff, locking, or select behavior, rerun the full benchmark suite, not only one scenario.
+- Use a reduced Swift benchmark config while iterating on correctness work, then rerun the full suite once the design is settled.
 - When benchmarking, keep the machine and workload constant. Cross-machine comparisons are not useful.
 - The most important files for hot-path performance work are [ChannelInternal.swift](Sources/AsyncChannels/ChannelInternal.swift), [Select.swift](Sources/AsyncChannels/Select.swift), and [FastLock.swift](Sources/AsyncChannels/FastLock.swift).

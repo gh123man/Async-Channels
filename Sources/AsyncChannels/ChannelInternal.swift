@@ -56,7 +56,7 @@ final class ChannelInternal: @unchecked Sendable {
     private let capacity: Int
     private var closed = false
     private var buffer: Deque<ChannelPointer>
-    private var sendQueue = Deque<(ChannelPointer, UnsafeContinuation<Void, Never>)>()
+    private var sendQueue = Deque<(ChannelPointer, UnsafeContinuation<Bool, Never>)>()
     private var recvQueue = Deque<UnsafeContinuation<ChannelPointer?, Never>>()
 
     init(capacity: Int = 0) {
@@ -129,18 +129,25 @@ final class ChannelInternal: @unchecked Sendable {
     @inline(__always)
     @usableFromInline
     func send(_ p: UnsafeRawPointer) async throws {
+        let payload = ChannelPointer(p)
+
         mutex.lock()
         
-        if try nonBlockingSend(ChannelPointer(p)) {
+        if try nonBlockingSend(payload) {
             return
         }
-        
-        await withUnsafeContinuation { continuation in
-            sendQueue.append((ChannelPointer(p), continuation))
-            let waiter = selectWaiter
+
+        let sent = await withUnsafeContinuation { continuation in
+            sendQueue.append((payload, continuation))
+            let selectWaiter = selectWaiter
             mutex.unlock()
-            waiter?.signal()
+            selectWaiter?.signal()
         }
+
+        if sent {
+            return
+        }
+        throw ChannelError.closed
     }
     
     @inline(__always)
@@ -161,7 +168,7 @@ final class ChannelInternal: @unchecked Sendable {
             if !sendQueue.isEmpty {
                 let (p, continuation) = sendQueue.popFirst()!
                 mutex.unlock()
-                continuation.resume()
+                continuation.resume(returning: true)
                 return p
             } else {
                 return nil
@@ -174,7 +181,7 @@ final class ChannelInternal: @unchecked Sendable {
             let (value, continuation) = sendQueue.popFirst()!
             buffer.append(value)
             mutex.unlock()
-            continuation.resume()
+            continuation.resume(returning: true)
         } else {
             mutex.unlock()
         }
@@ -194,12 +201,12 @@ final class ChannelInternal: @unchecked Sendable {
             mutex.unlock()
             return nil
         }
-        
+
         let p = await withUnsafeContinuation { continuation in
             recvQueue.append(continuation)
-            let waiter = selectWaiter
+            let selectWaiter = selectWaiter
             mutex.unlock()
-            waiter?.signal()
+            selectWaiter?.signal()
         }
         return p?.rawValue
     }
@@ -218,12 +225,27 @@ final class ChannelInternal: @unchecked Sendable {
     @inline(__always)
     func close() {
         mutex.lock()
-        defer { mutex.unlock() }
         closed = true
         selectWaiter?.signal()
-        
+
+        var recvWaiters = [UnsafeContinuation<ChannelPointer?, Never>]()
+        recvWaiters.reserveCapacity(recvQueue.count)
         while let recvW = recvQueue.popFirst() {
+            recvWaiters.append(recvW)
+        }
+
+        var sendWaiters = [UnsafeContinuation<Bool, Never>]()
+        sendWaiters.reserveCapacity(sendQueue.count)
+        while let (_, sendW) = sendQueue.popFirst() {
+            sendWaiters.append(sendW)
+        }
+        mutex.unlock()
+
+        for recvW in recvWaiters {
             recvW.resume(returning: nil)
+        }
+        for sendW in sendWaiters {
+            sendW.resume(returning: false)
         }
     }
 }

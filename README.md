@@ -92,6 +92,8 @@ A Channel can be closed. In Swift, the channel receive (`<-`) operator returns `
 
 If you want to catch the error when sending on a closed channel, you can use `ThrowingChannel`. Note that you cannot `select` a throwing channel at this time. 
 
+If a `ThrowingChannel.send` is already suspended when the channel is closed, that send will resume by throwing `ChannelError.closed`.
+
 ```swift
 let a = Channel<String>()
 

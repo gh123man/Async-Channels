@@ -40,9 +40,11 @@ public final class Channel<T: Sendable>: @unchecked Sendable {
     @inline(__always)
     @inlinable
     public func send(_ value: T) async {
+        let pointer = toPointer(value)
         do {
-            try await channelInternal.send(toPointer(value))
+            try await channelInternal.send(pointer)
         } catch {
+            _ = toValue(pointer) as T?
             fatalError("Cannot send on a closed channel")
         }
     }
@@ -65,9 +67,11 @@ public final class Channel<T: Sendable>: @unchecked Sendable {
     @inline(__always)
     @inlinable
     public func syncSend(_ value: T) -> Bool {
+        let pointer = toPointer(value)
         do {
-            return try channelInternal.syncSend(toPointer(value))
+            return try channelInternal.syncSend(pointer)
         } catch {
+            _ = toValue(pointer) as T?
             fatalError("Cannot send on a closed channel")
         }
     }
@@ -89,4 +93,3 @@ public final class Channel<T: Sendable>: @unchecked Sendable {
         channelInternal.close()
     }
 }
-
